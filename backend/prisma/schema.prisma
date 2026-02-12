@@ -1,0 +1,787 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Role {
+  id               Int              @id @default(autoincrement())
+  role             String?          @db.VarChar
+  role_permissions RolePermission[]
+  users            User[]
+
+  @@map("roles")
+}
+
+model User {
+  id                Int                 @id @default(autoincrement())
+  name              String?             @db.VarChar
+  email             String?             @unique @db.VarChar
+  password          String?             @db.VarChar
+  phone             String?             @db.VarChar
+  registration_no   String?             @db.VarChar
+  role_id           Int?
+  college_id        Int?
+  department_id     Int?
+  created_at        DateTime?           @db.Timestamp(6)
+  last_login        DateTime?           @db.Timestamp(6)
+  placement_id      Int?
+  roll_number       String?             @db.VarChar
+  staff_id          String?             @db.VarChar
+  action_logs       ActionLog[]
+  login_logs        LoginLog[]
+  mcq_questions     mcq_questions[]
+  modules           Module[]
+  plagarism_reports plagarism_reports[]
+  createdProblems   Problem[]           @relation("ProblemCreator")
+  mentor_profiles   StudentProfile[]    @relation("MentorProfiles")
+  student_profile   StudentProfile?     @relation("UserProfile")
+  submissions       Submission[]
+  test_attempts     TestAttempt[]
+  createdTests      Test[]              @relation("TestCreator")
+  user_permissions  user_permissions[]
+  college           College?            @relation(fields: [college_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  department        Department?         @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  placement         placement?          @relation(fields: [placement_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  role              Role?               @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  is_super_admin          Boolean?                     @default(false)
+  coins                   Int                          @default(0)
+  last_solved_date        DateTime?
+  streak                  Int                          @default(0)
+  comments                Comment[]
+  bookmarks               UserBookmark[]
+  contributions           UserContribution[]
+  hackathon_participation UserHackathonParticipation[]
+  user_preferences        UserPreference?
+  purchases               UserPurchase[]
+  votes                   Vote[]
+  blogs                   Blog[]
+  placements              Placement[]
+  github_id               String?                      @unique @db.VarChar
+  github_username         String?                      @db.VarChar
+
+  @@map("users")
+}
+
+model Problem {
+  id           Int              @id @default(autoincrement())
+  module_id    Int?
+  title        String?          @db.VarChar
+  description  String?
+  difficulty   difficulty_enum?
+  order_index  Int?
+  created_by   Int?
+  is_published Boolean?
+  category_id  Int?
+  problem_tags problem_tags[]
+  categories   categories?      @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  creator      User?            @relation("ProblemCreator", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  module       Module?          @relation(fields: [module_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  submissions  Submission[]
+  testProblems TestProblem[]    @ignore
+  testCases    TestCase[]
+
+  @@index([category_id], map: "idx_problems_category_id")
+  daily_challenges DailyChallenge[]
+
+  @@map("problems")
+}
+
+model Test {
+  id                      Int                       @id @default(autoincrement())
+  name                    String?                   @db.VarChar
+  batch_id                Int?
+  college_id              Int?
+  start_time              DateTime?                 @db.Timestamp(6)
+  end_time                DateTime?                 @db.Timestamp(6)
+  status                  test_status_enum?
+  created_by              Int?
+  test_type               test_type_enum?
+  results_published       Boolean?                  @default(false)
+  max_navigations         Int                       @default(3)
+  duration_minutes        Int                       @default(60)
+  plagarism_reports       plagarism_reports[]
+  test_attempts           TestAttempt[]
+  test_mcq_questions      test_mcq_questions[]
+  testProblems            TestProblem[]             @ignore
+  test_target_batches     test_target_batches[]
+  test_target_departments test_target_departments[]
+  test_target_placements  test_target_placements[]
+  batch                   Batch?                    @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  college                 College?                  @relation(fields: [college_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  creator                 User?                     @relation("TestCreator", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("tests")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TestProblem {
+  test_id    Int?
+  problem_id Int?
+  problem    Problem? @relation(fields: [problem_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  test       Test?    @relation(fields: [test_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([test_id, problem_id], map: "test_problems_test_id_problem_id_idx")
+  @@map("test_problems")
+  @@ignore
+}
+
+model ActionLog {
+  id          Int       @id @default(autoincrement())
+  user_id     Int?
+  action      String?   @db.VarChar
+  target_type String?   @db.VarChar
+  target_id   Int?
+  created_at  DateTime? @db.Timestamp(6)
+  user        User?     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("action_logs")
+}
+
+model Batch {
+  id                  Int                   @id @default(autoincrement())
+  batch_year          String?               @unique @db.VarChar
+  student_profiles    StudentProfile[]
+  test_target_batches test_target_batches[]
+  tests               Test[]
+
+  @@map("batches")
+}
+
+model College {
+  id           Int          @id
+  college_code Int?         @unique
+  name         String?      @db.VarChar
+  departments  Department[]
+  tests        Test[]
+  users        User[]
+
+  @@map("colleges")
+}
+
+model Department {
+  id                      Int                       @id @default(autoincrement())
+  name                    String?                   @db.VarChar
+  department_code         String?                   @db.VarChar
+  college_id              Int?
+  colleges                College?                  @relation(fields: [college_id], references: [college_code], onDelete: NoAction, onUpdate: NoAction)
+  placement               placement[]
+  test_target_departments test_target_departments[]
+  users                   User[]
+
+  @@map("departments")
+}
+
+model LoginLog {
+  id         Int       @id @default(autoincrement())
+  user_id    Int?
+  ip_address String?   @db.VarChar
+  status     login_status_enum
+  created_at DateTime? @db.Timestamp(6)
+  user       User?     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("login_logs")
+}
+
+model Module {
+  id          Int       @id @default(autoincrement())
+  parent_id   Int?
+  name        String?   @db.VarChar
+  order_index Int?
+  is_leaf     Boolean?
+  created_by  Int?
+  user        User?     @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parent      Module?   @relation("ModuleHierarchy", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children    Module[]  @relation("ModuleHierarchy")
+  problems    Problem[]
+
+  @@map("modules")
+}
+
+model Permission {
+  id               Int                @id @default(autoincrement())
+  permission       String?            @db.VarChar
+  role_permissions RolePermission[]
+  user_permissions user_permissions[]
+
+  @@map("permissions")
+}
+
+model ProgrammingLanguage {
+  id          Int          @id @default(autoincrement())
+  language    String?      @db.VarChar
+  submissions Submission[]
+
+  @@map("programming_language")
+}
+
+model RolePermission {
+  id            Int         @id @default(autoincrement())
+  role_id       Int?        @map("role")
+  permission_id Int?        @map("permission")
+  permission    Permission? @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  role          Role?       @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([role_id, permission_id], map: "role_permissions_role_permission_idx")
+  @@map("role_permissions")
+}
+
+model StudentPlatformProfile {
+  id             Int             @id @default(autoincrement())
+  student_id     Int?            @unique
+  leetcode       String?         @db.VarChar
+  hackerrank     String?         @db.VarChar
+  codeforces     String?         @db.VarChar
+  atcoder        String?         @db.VarChar
+  skillrack      String?         @db.VarChar
+  codechef       String?         @db.VarChar
+  studentProfile StudentProfile? @relation(fields: [student_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("student_platform_profiles")
+}
+
+model StudentProfile {
+  id               Int                     @id @default(autoincrement())
+  user_id          Int?                    @unique
+  batch_id         Int?
+  mentor_id        Int?
+  platform_profile StudentPlatformProfile?
+  batch            Batch?                  @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  mentor           User?                   @relation("MentorProfiles", fields: [mentor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user             User?                   @relation("UserProfile", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("student_profiles")
+}
+
+model Submission {
+  id                  Int                     @id @default(autoincrement())
+  user_id             Int?
+  problem_id          Int?
+  language_id         Int?
+  ip_address          String?                 @db.VarChar
+  code                String?
+  status              submission_status_enum?
+  runtime             Int?
+  memory              Int?
+  test_attempt_id     Int?
+  created_at          DateTime?               @db.Timestamp(6)
+  programmingLanguage ProgrammingLanguage?    @relation(fields: [language_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  problem             Problem?                @relation(fields: [problem_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  testAttempt         TestAttempt?            @relation(fields: [test_attempt_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                User?                   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("submissions")
+}
+
+model TestAttempt {
+  id                       Int                        @id @default(autoincrement())
+  test_id                  Int?
+  user_id                  Int?
+  start_time               DateTime?                  @db.Timestamp(6)
+  end_time                 DateTime?                  @db.Timestamp(6)
+  count                    Int?
+  status                   test_attempt_status_enum?
+  total_marks              Decimal?                   @db.Decimal(10, 2)
+  max_marks                Decimal?                   @db.Decimal(10, 2)
+  navigation_override      Int                        @default(0)
+  mcq_attempt_answers      mcq_attempt_answers[]
+  submissions              Submission[]
+  test_attempt_malpractice test_attempt_malpractice[]
+  test                     Test?                      @relation(fields: [test_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user                     User?                      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([test_id, user_id, count], map: "test_attempts_test_id_user_id_count_idx")
+  @@map("test_attempts")
+}
+
+model TestCase {
+  id         Int      @id @default(autoincrement())
+  problem_id Int?
+  input      String?
+  output     String?
+  is_sample  Boolean?
+  problem    Problem? @relation(fields: [problem_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("testcases")
+}
+
+model Tag {
+  id                Int                 @id @default(autoincrement())
+  name              String?             @unique @db.VarChar
+  category_id       Int?
+  mcq_question_tags mcq_question_tags[]
+  problem_tags      problem_tags[]
+  categories        categories?         @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+
+  @@index([category_id], map: "idx_tags_category_id")
+  blogs             BlogTag[]
+
+  @@map("tags")
+}
+
+model categories {
+  id            Int             @id @default(autoincrement())
+  name          String          @db.VarChar
+  created_at    DateTime?       @default(now()) @db.Timestamp(6)
+  mcq_questions mcq_questions[]
+  problems      Problem[]
+  tags          Tag[]
+}
+
+model mcq_attempt_answers {
+  id                  Int           @id @default(autoincrement())
+  test_attempt_id     Int
+  mcq_question_id     Int
+  selected_option_ids Int[]         @default([])
+  marks_awarded       Decimal?      @db.Decimal(10, 2)
+  mcq_questions       mcq_questions @relation(fields: [mcq_question_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  test_attempts       TestAttempt   @relation(fields: [test_attempt_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([test_attempt_id, mcq_question_id])
+  @@index([test_attempt_id], map: "idx_mcq_attempt_answers_test_attempt_id")
+}
+
+model mcq_options {
+  id              Int           @id @default(autoincrement())
+  mcq_question_id Int
+  option_text     String        @db.VarChar
+  is_correct      Boolean       @default(false)
+  mcq_questions   mcq_questions @relation(fields: [mcq_question_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([mcq_question_id], map: "idx_mcq_options_mcq_question_id")
+}
+
+model mcq_question_tags {
+  mcq_question_id Int
+  tag_id          Int
+  mcq_questions   mcq_questions @relation(fields: [mcq_question_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tags            Tag           @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([mcq_question_id, tag_id])
+  @@index([tag_id], map: "idx_mcq_question_tags_tag_id")
+}
+
+model mcq_questions {
+  id                  Int                    @id @default(autoincrement())
+  question            String
+  question_type       mcq_question_type_enum
+  max_marks           Decimal                @default(1) @db.Decimal(10, 2)
+  created_by          Int?
+  created_at          DateTime?              @default(now()) @db.Timestamp(6)
+  category_id         Int?
+  mcq_attempt_answers mcq_attempt_answers[]
+  mcq_options         mcq_options[]
+  mcq_question_tags   mcq_question_tags[]
+  categories          categories?            @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  users               User?                  @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  test_mcq_questions  test_mcq_questions[]
+
+  @@index([category_id], map: "idx_mcq_questions_category_id")
+}
+
+model placement {
+  id                     Int                      @id @default(autoincrement())
+  placement_name         String?                  @unique @db.VarChar
+  department_id          Int?
+  departments            Department?              @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  test_target_placements test_target_placements[]
+  users                  User[]
+}
+
+model plagarism_reports {
+  id           Int     @id
+  plag_persent Int?
+  reason       String? @db.VarChar
+  user_id      Int?
+  test_id      Int?
+  tests        Test?   @relation(fields: [test_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users        User?   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model problem_tags {
+  problem_id Int
+  tag_id     Int
+  problems   Problem @relation(fields: [problem_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tags       Tag     @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([problem_id, tag_id])
+  @@index([tag_id], map: "idx_problem_tags_tag_id")
+}
+
+model test_attempt_malpractice {
+  id            Int         @id @default(autoincrement())
+  attempt_id    Int
+  type          String      @db.VarChar(50)
+  created_at    DateTime?   @default(now()) @db.Timestamp(6)
+  test_attempts TestAttempt @relation(fields: [attempt_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([attempt_id], map: "idx_test_attempt_malpractice_attempt_id")
+}
+
+model test_mcq_questions {
+  test_id         Int
+  mcq_question_id Int
+  order_index     Int           @default(0)
+  mcq_questions   mcq_questions @relation(fields: [mcq_question_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tests           Test          @relation(fields: [test_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([test_id, mcq_question_id])
+}
+
+model test_target_batches {
+  test_id  Int
+  batch_id Int
+  batches  Batch @relation(fields: [batch_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tests    Test  @relation(fields: [test_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([test_id, batch_id])
+  @@index([test_id], map: "idx_test_target_batches_test_id")
+}
+
+model test_target_departments {
+  test_id       Int
+  department_id Int
+  departments   Department @relation(fields: [department_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tests         Test       @relation(fields: [test_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([test_id, department_id])
+  @@index([test_id], map: "idx_test_target_departments_test_id")
+}
+
+model test_target_placements {
+  test_id      Int
+  placement_id Int
+  placement    placement @relation(fields: [placement_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tests        Test      @relation(fields: [test_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([test_id, placement_id])
+  @@index([test_id], map: "idx_test_target_placements_test_id")
+}
+
+model user_permissions {
+  user_id       Int
+  permission_id Int
+  permissions   Permission @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users         User       @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([user_id, permission_id])
+}
+
+enum difficulty_enum {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum submission_status_enum {
+  NOT_ATTEMPTED
+  SOLVED
+  WRONG_ANSWER
+}
+
+enum test_attempt_status_enum {
+  STARTED
+  COMPLETED
+}
+
+enum test_status_enum {
+  NOT_SCHEDULED
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum mcq_question_type_enum {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+}
+
+enum test_type_enum {
+  CODING
+  MCQ
+}
+
+enum login_status_enum {
+  SUCCESS
+  FAILURE
+}
+
+model DailyChallenge {
+  id           Int      @id @default(autoincrement())
+  problem_id   Int
+  date         DateTime @unique @db.Date
+  set_by_admin Boolean  @default(false)
+  created_at   DateTime @default(now())
+  problem      Problem  @relation(fields: [problem_id], references: [id], onDelete: Cascade)
+
+  @@map("daily_challenges")
+}
+
+model StoreItem {
+  id          Int            @id @default(autoincrement())
+  name        String         @db.VarChar
+  description String?
+  cost        Int
+  image_url   String?
+  type        String         @db.VarChar
+  is_active   Boolean        @default(true)
+  created_at  DateTime       @default(now())
+  updated_at  DateTime       @updatedAt
+  purchases   UserPurchase[]
+
+  @@map("store_items")
+}
+
+model UserPurchase {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  item_id      Int
+  purchased_at DateTime  @default(now())
+  item         StoreItem @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("user_purchases")
+}
+
+model Hackathon {
+  id                           Int                          @id @default(autoincrement())
+  title                        String
+  platform_source              String
+  organizer                    String?
+  start_date                   DateTime?
+  end_date                     DateTime?
+  registration_deadline        DateTime?
+  mode                         String?
+  location                     String?
+  prize_pool                   String?
+  difficulty                   String?
+  tags                         Json?
+  url                          String                       @unique
+  description                  String?
+  image_url                    String?
+  eligibility                  String?
+  team_size                    String?
+  category                     String                       @default("hackathon")
+  is_active                    Boolean                      @default(true)
+  view_count                   Int                          @default(0)
+  bookmark_count               Int                          @default(0)
+  created_at                   DateTime                     @default(now())
+  updated_at                   DateTime                     @updatedAt
+  user_hackathon_participation UserHackathonParticipation[]
+
+  @@index([platform_source])
+  @@index([is_active])
+  @@index([difficulty])
+  @@index([start_date])
+  @@index([category])
+  @@map("hackathons")
+}
+
+model OpenSourceIssue {
+  id                 Int                @id @default(autoincrement())
+  platform_source    String
+  repo_name          String
+  repo_url           String?
+  issue_title        String
+  issue_number       Int?
+  issue_url          String             @unique
+  organization       String?
+  description        String?
+  language           String?
+  labels             Json?
+  difficulty         String?
+  stars              Int                @default(0)
+  forks              Int                @default(0)
+  has_mentor         Boolean            @default(false)
+  mentor_info        String?
+  time_estimate      String?
+  created_date       DateTime?
+  updated_date       DateTime?
+  is_assigned        Boolean            @default(false)
+  assignee           String?
+  comment_count      Int                @default(0)
+  bounty_amount      Decimal?           @db.Decimal(10, 2)
+  bounty_currency    String?
+  view_count         Int                @default(0)
+  bookmark_count     Int                @default(0)
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+  user_contributions UserContribution[]
+
+  @@index([language])
+  @@index([difficulty])
+  @@index([platform_source])
+  @@index([is_assigned])
+  @@map("opensource_issues")
+}
+
+model UserBookmark {
+  id            Int       @id @default(autoincrement())
+  user_id       Int
+  bookmark_type String
+  item_id       Int
+  notes         String?
+  reminder_set  Boolean   @default(false)
+  reminder_date DateTime?
+  created_at    DateTime  @default(now())
+  user          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, bookmark_type, item_id])
+  @@index([user_id, bookmark_type])
+  @@map("user_bookmarks")
+}
+
+model UserPreference {
+  id                   Int      @id @default(autoincrement())
+  user_id              Int      @unique
+  preferred_languages  Json?
+  preferred_domains    Json?
+  difficulty_level     String   @default("beginner")
+  hackathon_mode_pref  String   @default("all")
+  notification_enabled Boolean  @default(true)
+  email_digest         String   @default("weekly")
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+  user                 User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model UserContribution {
+  id                Int             @id @default(autoincrement())
+  user_id           Int
+  issue_id          Int
+  status            String          @default("interested")
+  github_username   String?
+  pr_url            String?
+  started_at        DateTime?
+  completed_at      DateTime?
+  notes             String?
+  created_at        DateTime        @default(now())
+  updated_at        DateTime
+  opensource_issues OpenSourceIssue @relation(fields: [issue_id], references: [id], onDelete: Cascade)
+  user              User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, status])
+  @@map("user_contributions")
+}
+
+model UserHackathonParticipation {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  hackathon_id Int
+  status       String    @default("interested")
+  team_name    String?
+  project_name String?
+  project_url  String?
+  prize_won    String?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  hackathons   Hackathon @relation(fields: [hackathon_id], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, status])
+  @@map("user_hackathon_participation")
+}
+
+model ApiCache {
+  id              Int      @id @default(autoincrement())
+  cache_key       String   @unique
+  platform_source String
+  data_type       String
+  cached_data     String
+  expires_at      DateTime
+  hit_count       Int      @default(0)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([cache_key, expires_at])
+  @@index([platform_source, data_type])
+  @@map("api_cache")
+}
+
+model PlatformSyncStatus {
+  id            Int       @id @default(autoincrement())
+  platform_name String    @unique
+  data_type     String
+  last_sync_at  DateTime?
+  next_sync_at  DateTime?
+  sync_status   String    @default("success")
+  error_message String?
+  items_fetched Int       @default(0)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  @@index([platform_name, data_type])
+  @@map("platform_sync_status")
+}
+
+model BlogTag {
+  id      Int  @id @default(autoincrement())
+  blog_id Int
+  tag_id  Int
+  blog    Blog @relation(fields: [blog_id], references: [id], onDelete: Cascade)
+  tag     Tag  @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@map("blog_tags_mapping")
+}
+
+model Blog {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  title       String    @db.VarChar(255)
+  description String?
+  up_vote     Int?      @default(0)
+  down_vote   Int?      @default(0)
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  is_deleted  Boolean?  @default(false)
+
+  comments Comment[]
+  votes    Vote[]
+  tags     BlogTag[]
+  author   User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("blogs")
+}
+
+model Comment {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  blog_id    Int
+  comment    String
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+
+  blog Blog @relation(fields: [blog_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Vote {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  blog_id      Int
+  is_up_vote   Boolean? @default(false)
+  is_down_vote Boolean? @default(false)
+
+  blog Blog @relation(fields: [blog_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("vote_user_mapping")
+}
+
+model Placement {
+  id              Int      @id @default(autoincrement())
+  user_id         Int
+  placement_group String   @db.VarChar(255)
+  created_at      DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("placements")
+}

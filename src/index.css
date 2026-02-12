@@ -1,0 +1,385 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design System: Anthropic-inspired
+ * Background: dark warm charcoal
+ * Cards: flat, 1px border, no shadows
+ * Typography: Newsreader (serif) for headlines, Inter (sans) for body
+ * Accent: #8b6bc5 (violet) instead of Anthropic's orange
+ * Philosophy: generous whitespace, clean lines, no gradients/animations on borders
+ */
+
+@layer base {
+  :root {
+    /* ── Anthropic Dark Palette ── */
+    --background: 30 3% 9%;
+    /* #171614 — warm dark */
+    --foreground: 40 6% 90%;
+    /* #E8E5E0 — warm light text */
+    --card: 30 3% 12%;
+    /* #1F1E1C — slightly lighter card */
+    --card-foreground: 40 6% 90%;
+    --popover: 30 3% 12%;
+    --popover-foreground: 40 6% 90%;
+    --primary: 268 75% 64%;
+    /* #9e5de9 — new logo purple */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 3% 15%;
+    /* #272523 — subtle bg */
+    --secondary-foreground: 40 6% 80%;
+    --muted: 30 3% 14%;
+    --muted-foreground: 30 4% 50%;
+    /* #847F78 — warm gray */
+    --accent: 50 90% 56%;
+    /* #f6d92a — new logo gold */
+    --accent-foreground: 30 3% 9%;
+    --destructive: 0 62% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 55% 48%;
+    --success-foreground: 30 3% 9%;
+    --warning: 38 88% 55%;
+    --warning-foreground: 30 3% 9%;
+    --border: 30 3% 18%;
+    /* #2E2C2A — subtle warm border */
+    --input: 30 3% 15%;
+    --ring: 261 35% 60%;
+    --radius: 0.5rem;
+    /* 8px — Anthropic standard */
+
+    --sidebar-background: 30 3% 10%;
+    --sidebar-foreground: 40 6% 90%;
+    --sidebar-primary: 261 35% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 30 3% 15%;
+    --sidebar-accent-foreground: 40 6% 90%;
+    --sidebar-border: 30 3% 18%;
+    --sidebar-ring: 261 35% 60%;
+    --sidebar-muted: 30 4% 50%;
+
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+    --shadow-diffuse: none;
+
+    --font-serif: 'Newsreader', 'Georgia', serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    /* #0F172A - Deep Slate Blue */
+    --foreground: 210 40% 98%;
+    /* #F8FAFC - crisp white */
+
+    --card: 222 47% 11%;
+    /* Match background (glass cards use utilities) */
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 265 89% 66%;
+    /* #9F56EF - Electric Violet */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217 33% 17%;
+    /* #1E293B - Lighter slate */
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 189 94% 43%;
+    /* #06B6D4 - Neon Cyan */
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 20%;
+    /* Subtle border */
+    --input: 217 33% 17%;
+    --ring: 265 89% 66%;
+
+    /* Sidebar vars (used by components) */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 265 89% 66%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 20%;
+    --sidebar-ring: 265 89% 66%;
+    --sidebar-muted: 215 20% 65%;
+  }
+
+  @layer base {
+    * {
+      border-color: hsl(var(--border));
+    }
+
+    body {
+      @apply bg-background text-foreground antialiased;
+      font-family: var(--font-sans);
+      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family: var(--font-serif);
+      @apply font-medium tracking-tight text-foreground;
+    }
+
+    h4,
+    h5,
+    h6 {
+      @apply font-medium tracking-tight text-foreground;
+      font-family: var(--font-sans);
+    }
+
+    /* Minimal scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: hsl(var(--muted-foreground) / 0.2);
+      border-radius: 100px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: hsl(var(--muted-foreground) / 0.35);
+    }
+  }
+
+  @layer components {
+    .page-container {
+      @apply p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto;
+    }
+
+    .neo-grid {
+      @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 auto-rows-auto;
+    }
+
+    /* ═══ ANTHROPIC CARD: flat, 1px border, no shadow ═══ */
+    .neo-card {
+      @apply relative overflow-hidden transition-colors duration-150;
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .neo-card:hover {
+      border-color: hsl(var(--primary) / 0.25);
+    }
+
+    .neo-card-flat {
+      @apply relative overflow-hidden;
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    /* Glass / Glow / Orbit — all normalized to same flat card */
+    .glass-card,
+    .glow-card,
+    .orbit-card {
+      @apply relative overflow-hidden transition-colors duration-150;
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .glass-card:hover,
+    .glow-card:hover,
+    .orbit-card:hover {
+      border-color: hsl(var(--primary) / 0.25);
+    }
+
+    /* Kill ALL pseudo-element animations */
+    .orbit-card::before,
+    .orbit-card::after,
+    .glow-card::before,
+    .glow-card::after,
+    .glass-card::before,
+    .glass-card::after {
+      display: none !important;
+    }
+
+    .orbit-card>* {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ═══ Section Titles (Anthropic style: small caps, muted) ═══ */
+    .grid-c-title {
+      @apply flex items-center justify-between mb-5;
+    }
+
+    .grid-c-title-text {
+      @apply text-[11px] font-semibold uppercase tracking-[0.15em];
+      color: hsl(var(--muted-foreground));
+      font-family: var(--font-sans);
+    }
+
+    /* ═══ Badges ═══ */
+    .badge-pill {
+      @apply px-3 py-1 rounded-md text-xs font-medium border transition-colors;
+    }
+
+    .badge-pill.success {
+      @apply bg-emerald-500/10 text-emerald-400 border-emerald-500/15;
+    }
+
+    .badge-pill.warning {
+      @apply bg-amber-500/10 text-amber-400 border-amber-500/15;
+    }
+
+    .badge-pill.danger {
+      @apply bg-rose-500/10 text-rose-400 border-rose-500/15;
+    }
+
+    .badge-pill.info {
+      @apply bg-blue-500/10 text-blue-400 border-blue-500/15;
+    }
+
+    .lg-value {
+      @apply text-3xl font-semibold tracking-tight;
+      font-family: var(--font-serif);
+    }
+
+    /* ═══ Gradient Text — violet ═══ */
+    .gradient-text,
+    .gradient-text-warm {
+      color: #8b6bc5;
+    }
+
+    /* ═══ Divider — simple 1px line (Anthropic uses these everywhere) ═══ */
+    .shimmer-line {
+      @apply h-px w-full;
+      background: hsl(var(--border));
+    }
+
+    /* ═══ Live Pulse — small clean dot ═══ */
+    .live-pulse {
+      @apply relative;
+    }
+
+    .live-pulse::after {
+      content: '';
+      @apply absolute top-2 right-2 h-2 w-2 rounded-full;
+      background: hsl(var(--success));
+    }
+
+    /* ═══ Mesh BG — disabled ═══ */
+    .mesh-bg {
+      position: relative;
+    }
+
+    .mesh-bg::before {
+      display: none;
+    }
+  }
+
+  @layer utilities {
+    .animate-fade-in {
+      animation: fadeIn 0.25s ease-out both;
+    }
+
+    .animate-slide-up {
+      animation: slideUp 0.3s ease-out both;
+    }
+
+    .animate-scale-in {
+      animation: scaleIn 0.25s ease-out both;
+    }
+
+    .stagger-children>*:nth-child(1) {
+      animation-delay: 0ms;
+    }
+
+    .stagger-children>*:nth-child(2) {
+      animation-delay: 40ms;
+    }
+
+    .stagger-children>*:nth-child(3) {
+      animation-delay: 80ms;
+    }
+
+    .stagger-children>*:nth-child(4) {
+      animation-delay: 120ms;
+    }
+
+    .stagger-children>*:nth-child(5) {
+      animation-delay: 160ms;
+    }
+
+    .stagger-children>*:nth-child(6) {
+      animation-delay: 200ms;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.97);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes progressFill {
+      from {
+        stroke-dashoffset: var(--circumference);
+      }
+
+      to {
+        stroke-dashoffset: var(--offset);
+      }
+    }
+
+    @keyframes widthGrow {
+      from {
+        width: 0%;
+      }
+    }
+  }
