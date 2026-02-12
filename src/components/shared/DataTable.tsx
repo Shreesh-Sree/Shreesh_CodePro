@@ -55,7 +55,7 @@ export function DataTable<T extends { id: string }>({
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6; // Increased to 6 to fill space
+  const itemsPerPage = 6;
 
   // Filter data based on search
   const filteredData = data.filter(item => {
@@ -122,10 +122,10 @@ export function DataTable<T extends { id: string }>({
   };
 
   return (
-    <div className="data-table-container">
+    <div className="w-full space-y-4">
       {/* Search Header */}
       {searchKeys.length > 0 && (
-        <div className="p-4 border-b flex items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative max-w-sm flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -135,151 +135,207 @@ export function DataTable<T extends { id: string }>({
                 setSearch(e.target.value);
                 setCurrentPage(1); // Reset to first page on search
               }}
-              className="pl-9 azure-input h-10"
+              className="pl-9 h-10 bg-card border-border"
             />
           </div>
           {totalPages > 1 && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
               <span>Page {currentPage} of {totalPages}</span>
             </div>
           )}
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-x-auto min-h-[400px]">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b bg-muted/30">
+      {/* Mobile Card View (Visible only on small screens) */}
+      <div className="sm:hidden space-y-4">
+        {paginatedData.map((item, index) => (
+          <div
+            key={item.id || index}
+            className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-3"
+            onClick={() => onRowClick?.(item)}
+          >
+            {/* Header/Actions Row */}
+            <div className="flex items-center justify-between">
+              {/* Checkbox for mobile */}
               {showSelection && (
-                <th className="px-4 py-3 w-10 border-r border-border/50 last:border-r-0" onClick={e => e.stopPropagation()}>
-                  <Checkbox
-                    checked={allSelected}
-                    onCheckedChange={toggleSelectAll}
-                    aria-label="Select all"
-                  />
-                </th>
+                <Checkbox
+                  checked={safeSelectedIds.has(item.id)}
+                  onCheckedChange={() => toggleSelect(item.id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
               )}
-              {columns.map(col => (
-                <th
-                  key={String(col.key)}
-                  className={cn(
-                    "px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider border-r border-border/50 last:border-r-0",
-                    col.sortable && "cursor-pointer select-none hover:text-foreground transition-colors",
-                    col.className
-                  )}
-                  onClick={() => col.sortable && handleSort(String(col.key))}
-                >
-                  <div className="flex items-center gap-2">
-                    {col.header}
-                    {col.sortable && sortKey === col.key && (
-                      sortDirection === 'asc'
-                        ? <ChevronUp className="h-3 w-3" />
-                        : <ChevronDown className="h-3 w-3" />
-                    )}
-                  </div>
-                </th>
-              ))}
-              {actions && actions.length > 0 && (
-                <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider w-16 border-r border-border/50 last:border-r-0">
-                  Actions
-                </th>
-              )}
-            </tr>
-          </thead>
-          <colgroup>
-            {showSelection && <col className="w-10" />}
-          </colgroup>
-          <tbody>
-            {paginatedData.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length + (actions ? 1 : 0) + (showSelection ? 1 : 0)}
-                  className="px-4 py-24 text-center text-muted-foreground"
-                >
-                  <div className="flex flex-col items-center gap-2 opacity-50">
-                    <Search className="h-8 w-8" />
-                    <p>{emptyMessage}</p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              paginatedData.map(item => (
-                <tr
-                  key={item.id}
-                  className={cn(
-                    "border-b last:border-0 hover:bg-muted/50 transition-colors group/row",
-                    onRowClick && "cursor-pointer"
-                  )}
-                  onClick={() => onRowClick?.(item)}
-                >
-                  {showSelection && (
-                    <td className="px-4 py-3 w-10 border-r border-border/50 last:border-r-0" onClick={e => e.stopPropagation()}>
-                      <Checkbox
-                        checked={safeSelectedIds.has(item.id)}
-                        onCheckedChange={() => toggleSelect(item.id)}
-                        aria-label={`Select ${item.id}`}
-                      />
-                    </td>
-                  )}
-                  {columns.map(col => (
-                    <td key={String(col.key)} className={cn("px-4 py-3 text-sm transition-colors border-r border-border/50 last:border-r-0", col.className)}>
-                      {col.render
-                        ? col.render(item)
-                        : String(getValue(item, String(col.key)) ?? '-')
-                      }
-                    </td>
-                  ))}
-                  {actions && actions.length > 0 && (
-                    <td className="px-4 py-3 text-right border-r border-border/50 last:border-r-0" onClick={e => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-yellow-700 hover:bg-yellow-400/20 transition-colors">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="animate-scale-in">
-                          {actions.map((action, idx) => (
-                            <DropdownMenuItem
-                              key={idx}
-                              onClick={() => action.onClick(item)}
-                              className={cn(
-                                "gap-2 cursor-pointer",
-                                action.variant === 'destructive' && "text-destructive focus:text-destructive"
-                              )}
-                            >
-                              {action.icon}
-                              {action.label}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  )}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
 
-      {/* Pagination Footer */}
-      {totalItems > 0 && (
-        <div className="p-4 border-t bg-muted/10">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-muted-foreground order-2 sm:order-1">
-              Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, totalItems)}</span> of <span className="font-medium">{totalItems}</span> results
-            </p>
-            <div className="order-1 sm:order-2">
-              <AdvancedPagination
-                totalPages={totalPages}
-                initialPage={currentPage}
-                onPageChange={handlePageChange}
-                variant="rounded"
-                className="py-0"
-              />
+              {/* Primary Identifier (First Column) */}
+              <div className="font-semibold text-foreground truncate flex-1 ml-2">
+                {(() => {
+                  const col = columns[0];
+                  if (!col) return null;
+                  const val = getValue(item, col.key as string);
+                  return col.render ? col.render(item) : String(val ?? '');
+                })()}
+              </div>
+
+              {/* Actions Dropdown */}
+              {actions && actions.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                      <MoreHorizontal weight="bold" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {actions.map((action, i) => (
+                      <DropdownMenuItem
+                        key={i}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          action.onClick(item);
+                        }}
+                        className={cn(action.variant === 'destructive' && "text-destructive focus:text-destructive")}
+                      >
+                        {action.icon && <span className="mr-2">{action.icon}</span>}
+                        {action.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+
+            {/* Data Rows */}
+            <div className="space-y-2 pt-2 border-t border-border/50">
+              {columns.slice(1).map((col, i) => (
+                <div key={i} className="flex justify-between items-start text-sm">
+                  <span className="text-muted-foreground font-medium shrink-0 mr-2">{col.header}</span>
+                  <span className="text-foreground text-right break-words line-clamp-2">
+                    {col.render ? col.render(item) : String(getValue(item, col.key as string) ?? '--')}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
+        ))}
+
+        {paginatedData.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-xl border-2 border-dashed border-border">
+            {emptyMessage}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View (Hidden on small screens) */}
+      <div className="hidden sm:block rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
+              <tr>
+                {showSelection && (
+                  <th className="px-4 py-3 w-[40px]">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </th>
+                )}
+                {columns.map(col => (
+                  <th
+                    key={String(col.key)}
+                    className={cn(
+                      "px-4 py-3 whitespace-nowrap transition-colors hover:bg-muted/50 cursor-pointer select-none",
+                      col.className
+                    )}
+                    onClick={() => col.sortable && handleSort(String(col.key))}
+                  >
+                    <div className="flex items-center gap-1 group">
+                      {col.header}
+                      {sortKey === String(col.key) && (
+                        <span className="text-primary">
+                          {sortDirection === 'asc' ? <ChevronUp weight="bold" /> : <ChevronDown weight="bold" />}
+                        </span>
+                      )}
+                      {col.sortable && sortKey !== String(col.key) && (
+                        <span className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors">
+                          <ChevronDown weight="bold" />
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                ))}
+                {actions && <th className="px-4 py-3 w-[50px]"></th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {paginatedData.length > 0 ? (
+                paginatedData.map((item, i) => (
+                  <tr
+                    key={item.id || i}
+                    onClick={() => onRowClick?.(item)}
+                    className={cn(
+                      "group transition-colors hover:bg-muted/30",
+                      onRowClick && "cursor-pointer"
+                    )}
+                  >
+                    {showSelection && (
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <Checkbox
+                          checked={safeSelectedIds.has(item.id)}
+                          onCheckedChange={() => toggleSelect(item.id)}
+                        />
+                      </td>
+                    )}
+                    {columns.map(col => (
+                      <td key={String(col.key)} className={cn("px-4 py-3 text-foreground", col.className)}>
+                        {col.render ? col.render(item) : String(getValue(item, col.key as string) ?? '--')}
+                      </td>
+                    ))}
+                    {actions && (
+                      <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                              <MoreHorizontal weight="bold" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40">
+                            {actions.map((action, idx) => (
+                              <DropdownMenuItem
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  action.onClick(item);
+                                }}
+                                className={cn(action.variant === 'destructive' && "text-destructive focus:text-destructive")}
+                              >
+                                {action.icon && <span className="mr-2">{action.icon}</span>}
+                                {action.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={columns.length + (actions ? 1 : 0) + (showSelection ? 1 : 0)} className="px-4 py-12 text-center text-muted-foreground">
+                    {emptyMessage}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-4">
+          <AdvancedPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         </div>
       )}
     </div>

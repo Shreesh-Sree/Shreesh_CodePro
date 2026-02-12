@@ -451,9 +451,9 @@ export default function TestAttempt() {
         {fullscreenOverlayContent}
         {timerBar}
 
-        <div className="flex min-h-0 flex-1">
+        <div className="flex flex-col lg:flex-row min-h-0 flex-1">
           {/* Left: Question */}
-          <aside className="flex w-[40%] min-w-[300px] flex-col border-r bg-card/50">
+          <aside className="flex w-full lg:w-[40%] lg:min-w-[300px] flex-col border-b lg:border-b-0 lg:border-r bg-card/50">
             <div className="shrink-0 border-b px-4 py-3 flex justify-between items-center bg-background">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Problem {currentIndex + 1} of {totalCount}</span>
             </div>

@@ -386,7 +386,7 @@ export default function Users() {
 
   return (
     <div className="page-container">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl font-medium tracking-tight text-foreground flex items-center gap-2" style={{ fontFamily: 'var(--font-serif)' }}>
             <UsersIcon className="h-6 w-6 text-primary" />
@@ -502,7 +502,7 @@ export default function Users() {
               </div>
             )}
             {currentUser?.role !== 'DEPARTMENT' && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
                   <Select

@@ -297,7 +297,7 @@ export default function Students() {
 
   return (
     <div className="page-container">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl font-medium tracking-tight text-foreground flex items-center gap-2" style={{ fontFamily: 'var(--font-serif)' }}>
             <BookOpen className="h-6 w-6 text-primary" />
@@ -406,7 +406,7 @@ export default function Students() {
                 />
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <Input id="name" value={formData.name} onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))} placeholder="Enter full name" className="bg-secondary/50 border-input" />
@@ -550,7 +550,7 @@ export default function Students() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             {!isHopeOrPep && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Department</Label>
                   <Select value={bulkDepartmentId} onValueChange={setBulkDepartmentId}>

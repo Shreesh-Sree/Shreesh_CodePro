@@ -14,6 +14,7 @@ import { testsApi } from '@/lib/api';
 import type { ApiTest } from '@/lib/api';
 import AdvancedPagination from '@/components/shared/AdvancedPagination';
 import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
+import { ArrowSquareOut as ExternalLink } from '@phosphor-icons/react';
 
 export default function Results() {
   const { testId } = useParams<{ testId: string }>();
@@ -79,7 +80,7 @@ export default function Results() {
             ← Back to tests
           </Button>
         </div>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <h1 className="text-2xl font-medium tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>{test?.name ?? 'Results'}</h1>
           {test && !test.resultsPublished && (
             <Button size="sm" disabled={publishing} onClick={() => handlePublish(test.id)}>
@@ -93,38 +94,95 @@ export default function Results() {
             <h2 className="text-lg font-medium tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>Cumulative results</h2>
           </div>
           <div className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent border-b border-border/50">
-                  <TableHead className="px-6 py-3 font-medium">Name</TableHead>
-                  <TableHead className="px-6 py-3 font-medium">Email</TableHead>
-                  <TableHead className="px-6 py-3 font-medium">Roll no</TableHead>
-                  <TableHead className="px-6 py-3 font-medium">Attempted at</TableHead>
-                  <TableHead className="px-6 py-3 font-medium">Score</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedResults.map((r) => (
-                  <TableRow key={r.attemptId} className="hover:bg-muted/30 border-b border-border/50 last:border-0">
-                    <TableCell className="px-6">{r.name}</TableCell>
-                    <TableCell className="px-6">{r.email}</TableCell>
-                    <TableCell className="px-6">{r.rollNumber}</TableCell>
-                    <TableCell className="px-6">{r.attemptedAt ? new Date(r.attemptedAt).toLocaleString() : '-'}</TableCell>
-                    <TableCell className="px-6">
+            {/* Mobile Card View */}
+            <div className="sm:hidden p-4 space-y-4">
+              {paginatedResults.map((r) => (
+                <div key={r.attemptId} className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-foreground">{r.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground"
+                      onClick={() => navigate(`/results/${testId}/student/${r.userId}`)}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="text-muted-foreground">Email</div>
+                    <div className="text-right truncate">{r.email}</div>
+
+                    <div className="text-muted-foreground">Roll No</div>
+                    <div className="text-right">{r.rollNumber}</div>
+
+                    <div className="text-muted-foreground">Score</div>
+                    <div className="text-right font-medium">
                       {r.totalMarks != null && r.maxMarks != null ? (
-                        <span className="font-medium text-foreground">{r.totalMarks} <span className="text-muted-foreground text-xs">/ {r.maxMarks}</span></span>
+                        <span>{r.totalMarks} <span className="text-muted-foreground text-xs font-normal">/ {r.maxMarks}</span></span>
                       ) : '-'}
-                    </TableCell>
-                    <TableCell className="px-6">
-                      <Button variant="link" size="sm" onClick={() => navigate(`/results/${testId}/student/${r.userId}`)} className="text-primary hover:text-primary/80">
-                        View detail
-                      </Button>
-                    </TableCell>
+                    </div>
+
+                    <div className="text-muted-foreground">Attempted</div>
+                    <div className="text-right text-xs">
+                      {r.attemptedAt ? new Date(r.attemptedAt).toLocaleString() : '-'}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/results/${testId}/student/${r.userId}`)}
+                      className="w-full sm:w-auto text-xs h-8"
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {paginatedResults.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">No results found.</div>
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden sm:block">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-b border-border/50">
+                    <TableHead className="px-6 py-3 font-medium">Name</TableHead>
+                    <TableHead className="px-6 py-3 font-medium">Email</TableHead>
+                    <TableHead className="px-6 py-3 font-medium">Roll no</TableHead>
+                    <TableHead className="px-6 py-3 font-medium">Attempted at</TableHead>
+                    <TableHead className="px-6 py-3 font-medium">Score</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {paginatedResults.map((r) => (
+                    <TableRow key={r.attemptId} className="hover:bg-muted/30 border-b border-border/50 last:border-0">
+                      <TableCell className="px-6">{r.name}</TableCell>
+                      <TableCell className="px-6">{r.email}</TableCell>
+                      <TableCell className="px-6">{r.rollNumber}</TableCell>
+                      <TableCell className="px-6">{r.attemptedAt ? new Date(r.attemptedAt).toLocaleString() : '-'}</TableCell>
+                      <TableCell className="px-6">
+                        {r.totalMarks != null && r.maxMarks != null ? (
+                          <span className="font-medium text-foreground">{r.totalMarks} <span className="text-muted-foreground text-xs">/ {r.maxMarks}</span></span>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell className="px-6">
+                        <Button variant="link" size="sm" onClick={() => navigate(`/results/${testId}/student/${r.userId}`)} className="text-primary hover:text-primary/80">
+                          View detail
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
             {totalPages > 1 && (
               <div className="p-4 border-t bg-muted/10 flex justify-end">
                 <AdvancedPagination

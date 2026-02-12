@@ -187,7 +187,7 @@ export default function Departments() {
 
   return (
     <div className="page-container">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl font-medium tracking-tight text-foreground flex items-center gap-2" style={{ fontFamily: 'var(--font-serif)' }}>
             <LayoutGrid className="h-6 w-6 text-primary" />
@@ -232,37 +232,37 @@ export default function Departments() {
                   {depts.map((dept) => (
                     <li
                       key={dept.id}
-                      className="flex flex-wrap items-center justify-between gap-4 px-6 py-3 transition-colors hover:bg-muted/30"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 px-4 py-3 transition-colors hover:bg-muted/30"
                     >
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <span className="font-medium text-sm">{dept.name}</span>
+                      <div className="flex items-baseline gap-2 w-full sm:w-auto min-w-0">
+                        <span className="font-medium text-sm truncate">{dept.name}</span>
                         {dept.code && (
-                          <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider", getDepartmentColor(dept.code))}>
+                          <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider shrink-0", getDepartmentColor(dept.code))}>
                             {dept.code}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 shrink-0">
                         {canUpdate && (
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             onClick={() => handleEdit(dept)}
-                            className="gap-1.5 h-8 text-xs"
+                            className="h-8 w-8 sm:w-auto sm:px-3 sm:gap-1.5 text-xs"
                           >
                             <Pencil className="h-3.5 w-3.5" />
-                            Edit
+                            <span className="hidden sm:inline">Edit</span>
                           </Button>
                         )}
                         {canDelete && (
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             onClick={() => handleDelete(dept)}
-                            className="gap-1.5 h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            className="h-8 w-8 sm:w-auto sm:px-3 sm:gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                            Delete
+                            <span className="hidden sm:inline">Delete</span>
                           </Button>
                         )}
                         {!canUpdate && !canDelete && (

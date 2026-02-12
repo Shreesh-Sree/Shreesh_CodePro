@@ -164,7 +164,7 @@ export default function Colleges() {
 
   return (
     <div className="page-container">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl font-medium tracking-tight text-foreground flex items-center gap-2" style={{ fontFamily: 'var(--font-serif)' }}>
             <Building2 className="h-6 w-6 text-primary" />
@@ -262,7 +262,7 @@ export default function Colleges() {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {headerLogos.map(logo => (
                 <div key={logo.id} className="group relative aspect-square rounded-lg border bg-secondary/30 flex items-center justify-center p-4">
                   <img src={logo.url} alt="Logo" className="w-full h-full object-contain" />

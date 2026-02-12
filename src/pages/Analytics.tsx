@@ -77,7 +77,7 @@ export default function Analytics() {
 
   return (
     <div className="page-container space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-medium tracking-tight text-foreground flex items-center gap-2" style={{ fontFamily: 'var(--font-serif)' }}>
             <ChartBar className="h-6 w-6 text-primary" />

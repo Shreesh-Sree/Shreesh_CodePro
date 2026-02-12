@@ -499,7 +499,7 @@ export default function Schedule() {
       </div>
 
       {/* Stepper Container */}
-      <div className="mb-12 pt-6 pb-12 px-10 rounded-2xl bg-muted/20 border border-border/50 relative overflow-hidden backdrop-blur-sm">
+      <div className="mb-8 sm:mb-12 pt-4 sm:pt-6 pb-8 sm:pb-12 px-4 sm:px-10 rounded-2xl bg-muted/20 border border-border/50 relative overflow-hidden backdrop-blur-sm">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/5 rounded-full -ml-16 -mb-16 blur-3xl pointer-events-none" />
 
@@ -519,7 +519,7 @@ export default function Schedule() {
                 >
                   <div
                     className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center font-bold text-base transition-all duration-500 border-2 bg-background z-20 relative",
+                      "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-sm sm:text-base transition-all duration-500 border-2 bg-background z-20 relative",
                       isActive ? "border-primary text-primary scale-110 shadow-[0_0_25px_rgba(var(--primary),0.35)]" :
                         isCompleted ? "border-primary bg-primary text-primary-foreground" :
                           "border-muted-foreground/30 text-muted-foreground/40 group-hover:border-muted-foreground/60"
@@ -538,7 +538,10 @@ export default function Schedule() {
                     )}
                   </div>
 
-                  <span className="absolute top-16 whitespace-nowrap text-[12px] font-black tracking-[0.2em] uppercase transition-all duration-300">
+                  <span className={cn(
+                    "absolute top-14 sm:top-16 whitespace-nowrap text-[10px] sm:text-[12px] font-black tracking-[0.2em] uppercase transition-all duration-300",
+                    !isActive && "hidden sm:block"
+                  )}>
                     {s.title}
                   </span>
                 </div>

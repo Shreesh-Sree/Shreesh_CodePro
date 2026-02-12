@@ -87,7 +87,7 @@ export default function Tests() {
         {tests.map((t) => (
           <div key={t.id} className="neo-card p-0 overflow-hidden flex flex-col h-full hover:border-primary/20 transition-colors">
             <div className="p-6 flex-1">
-              <div className="flex flex-row items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                 <h3 className="text-lg font-medium tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>{t.name}</h3>
                 <Badge variant={canStart(t) ? 'default' : 'secondary'} className="rounded-full px-2.5 font-normal">
                   {t.displayStatus ?? t.status}

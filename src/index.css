@@ -15,27 +15,81 @@
 
 @layer base {
   :root {
-    /* ── Anthropic Dark Palette ── */
+    /* ── Clean Professional Light Palette ── */
+    --background: 0 0% 100%;
+    /* #FFFFFF — pure white */
+    --foreground: 222 12% 16%;
+    /* #232936 — near-black text */
+    --card: 220 20% 97%;
+    /* #F4F6F9 — off-white card */
+    --card-foreground: 222 12% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 12% 16%;
+    --primary: 268 65% 52%;
+    /* #7C3AED — professional violet */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 94%;
+    /* #EDEEF2 — subtle bg */
+    --secondary-foreground: 222 12% 30%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 8% 46%;
+    /* #6B7280 — readable gray */
+    --accent: 45 93% 47%;
+    /* #E5A800 — deep gold for contrast */
+    --accent-foreground: 222 12% 16%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 55% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 88% 50%;
+    --warning-foreground: 222 12% 16%;
+    --border: 220 13% 90%;
+    /* #E2E4E9 — subtle gray border */
+    --input: 220 13% 90%;
+    --ring: 268 65% 52%;
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 12% 16%;
+    --sidebar-primary: 268 65% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 95%;
+    --sidebar-accent-foreground: 222 12% 16%;
+    --sidebar-border: 220 13% 90%;
+    --sidebar-ring: 268 65% 52%;
+    --sidebar-muted: 220 8% 46%;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.05);
+    --shadow-diffuse: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+    --font-serif: 'Newsreader', 'Georgia', serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  .dark {
+    /* ── Warm Dark Palette ── */
     --background: 30 3% 9%;
     /* #171614 — warm dark */
     --foreground: 40 6% 90%;
     /* #E8E5E0 — warm light text */
     --card: 30 3% 12%;
-    /* #1F1E1C — slightly lighter card */
+    /* #1F1E1C */
     --card-foreground: 40 6% 90%;
     --popover: 30 3% 12%;
     --popover-foreground: 40 6% 90%;
     --primary: 268 75% 64%;
-    /* #9e5de9 — new logo purple */
+    /* #9e5de9 */
     --primary-foreground: 0 0% 100%;
     --secondary: 30 3% 15%;
-    /* #272523 — subtle bg */
+    /* #272523 */
     --secondary-foreground: 40 6% 80%;
     --muted: 30 3% 14%;
     --muted-foreground: 30 4% 50%;
-    /* #847F78 — warm gray */
+    /* #847F78 */
     --accent: 50 90% 56%;
-    /* #f6d92a — new logo gold */
+    /* #f6d92a — gold */
     --accent-foreground: 30 3% 9%;
     --destructive: 0 62% 55%;
     --destructive-foreground: 0 0% 100%;
@@ -44,75 +98,24 @@
     --warning: 38 88% 55%;
     --warning-foreground: 30 3% 9%;
     --border: 30 3% 18%;
-    /* #2E2C2A — subtle warm border */
+    /* #2E2C2A */
     --input: 30 3% 15%;
     --ring: 261 35% 60%;
-    --radius: 0.5rem;
-    /* 8px — Anthropic standard */
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 30 3% 9%;
+    --sidebar-foreground: 40 6% 90%;
+    --sidebar-primary: 268 75% 64%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 30 3% 15%;
+    --sidebar-accent-foreground: 40 6% 90%;
+    --sidebar-border: 30 3% 18%;
+    --sidebar-ring: 261 35% 60%;
     --sidebar-muted: 30 4% 50%;
 
     --shadow-sm: none;
     --shadow-md: none;
     --shadow-lg: none;
     --shadow-diffuse: none;
-
-    --font-serif: 'Newsreader', 'Georgia', serif;
-    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  }
-
-  .dark {
-    --background: 250 20% 4%;
-    /* #030014 - Deep Space (Neutral Dark) */
-    --foreground: 210 20% 98%;
-
-    --card: 250 20% 5%;
-    /* Match background for flat look */
-    --card-foreground: 210 20% 98%;
-
-    --popover: 250 20% 5%;
-    --popover-foreground: 210 20% 98%;
-
-    --primary: 265 89% 66%;
-    /* #9F56EF - Electric Violet */
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 250 10% 10%;
-    /* Darker secondary */
-    --secondary-foreground: 210 20% 98%;
-
-    --muted: 250 10% 10%;
-    --muted-foreground: 215 10% 65%;
-
-    --accent: 48 96% 53%;
-    --accent-foreground: 30 3% 9%;
-
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 250 10% 12%;
-    /* Subtle neutral border */
-    --input: 250 10% 12%;
-    --ring: 265 89% 66%;
-
-    /* Sidebar vars */
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-    --sidebar-muted: 215 10% 65%;
   }
 }
 
@@ -182,7 +185,7 @@
 
 @layer components {
   .page-container {
-    @apply p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto;
+    @apply p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto;
   }
 
   .neo-grid {
@@ -425,40 +428,179 @@
     }
   }
 }
+
 /* Ball Bouncing Loader Animations */
-@keyframes barUp1 { 0%, 40%, 100% { transform: scaleY(0.2); } 50%, 90% { transform: scaleY(1); } }
-@keyframes barUp2 { 0%, 40%, 100% { transform: scaleY(0.4); } 50%, 90% { transform: scaleY(0.8); } }
-@keyframes barUp3 { 0%, 100% { transform: scaleY(0.6); } }
-@keyframes barUp4 { 0%, 40%, 100% { transform: scaleY(0.8); } 50%, 90% { transform: scaleY(0.4); } }
-@keyframes barUp5 { 0%, 40%, 100% { transform: scaleY(1); } 50%, 90% { transform: scaleY(0.2); } }
-@keyframes ball {
-  0% { transform: translate(0, 0); }
-  5% { transform: translate(8px, -14px); }
-  10% { transform: translate(15px, -10px); }
-  17% { transform: translate(23px, -24px); }
-  20% { transform: translate(30px, -20px); }
-  27% { transform: translate(38px, -34px); }
-  30% { transform: translate(45px, -30px); }
-  37% { transform: translate(53px, -44px); }
-  40% { transform: translate(60px, -40px); }
-  50% { transform: translate(60px, 0); }
-  57% { transform: translate(53px, -14px); }
-  60% { transform: translate(45px, -10px); }
-  67% { transform: translate(37px, -24px); }
-  70% { transform: translate(30px, -20px); }
-  77% { transform: translate(22px, -34px); }
-  80% { transform: translate(15px, -30px); }
-  87% { transform: translate(7px, -44px); }
-  90% { transform: translate(0, -40px); }
-  100% { transform: translate(0, 0); }
+@keyframes barUp1 {
+
+  0%,
+  40%,
+  100% {
+    transform: scaleY(0.2);
+  }
+
+  50%,
+  90% {
+    transform: scaleY(1);
+  }
 }
 
-.animate-barUp1 { animation: barUp1 4s infinite; transform-origin: bottom; }
-.animate-barUp2 { animation: barUp2 4s infinite; transform-origin: bottom; }
-.animate-barUp3 { animation: barUp3 4s infinite; transform-origin: bottom; }
-.animate-barUp4 { animation: barUp4 4s infinite; transform-origin: bottom; }
-.animate-barUp5 { animation: barUp5 4s infinite; transform-origin: bottom; }
-.animate-ball { animation: ball 4s infinite; }
+@keyframes barUp2 {
+
+  0%,
+  40%,
+  100% {
+    transform: scaleY(0.4);
+  }
+
+  50%,
+  90% {
+    transform: scaleY(0.8);
+  }
+}
+
+@keyframes barUp3 {
+
+  0%,
+  100% {
+    transform: scaleY(0.6);
+  }
+}
+
+@keyframes barUp4 {
+
+  0%,
+  40%,
+  100% {
+    transform: scaleY(0.8);
+  }
+
+  50%,
+  90% {
+    transform: scaleY(0.4);
+  }
+}
+
+@keyframes barUp5 {
+
+  0%,
+  40%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  50%,
+  90% {
+    transform: scaleY(0.2);
+  }
+}
+
+@keyframes ball {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  5% {
+    transform: translate(8px, -14px);
+  }
+
+  10% {
+    transform: translate(15px, -10px);
+  }
+
+  17% {
+    transform: translate(23px, -24px);
+  }
+
+  20% {
+    transform: translate(30px, -20px);
+  }
+
+  27% {
+    transform: translate(38px, -34px);
+  }
+
+  30% {
+    transform: translate(45px, -30px);
+  }
+
+  37% {
+    transform: translate(53px, -44px);
+  }
+
+  40% {
+    transform: translate(60px, -40px);
+  }
+
+  50% {
+    transform: translate(60px, 0);
+  }
+
+  57% {
+    transform: translate(53px, -14px);
+  }
+
+  60% {
+    transform: translate(45px, -10px);
+  }
+
+  67% {
+    transform: translate(37px, -24px);
+  }
+
+  70% {
+    transform: translate(30px, -20px);
+  }
+
+  77% {
+    transform: translate(22px, -34px);
+  }
+
+  80% {
+    transform: translate(15px, -30px);
+  }
+
+  87% {
+    transform: translate(7px, -44px);
+  }
+
+  90% {
+    transform: translate(0, -40px);
+  }
+
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+.animate-barUp1 {
+  animation: barUp1 4s infinite;
+  transform-origin: bottom;
+}
+
+.animate-barUp2 {
+  animation: barUp2 4s infinite;
+  transform-origin: bottom;
+}
+
+.animate-barUp3 {
+  animation: barUp3 4s infinite;
+  transform-origin: bottom;
+}
+
+.animate-barUp4 {
+  animation: barUp4 4s infinite;
+  transform-origin: bottom;
+}
+
+.animate-barUp5 {
+  animation: barUp5 4s infinite;
+  transform-origin: bottom;
+}
+
+.animate-ball {
+  animation: ball 4s infinite;
+}
+
 /*
  ---break---
  */
@@ -466,6 +608,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

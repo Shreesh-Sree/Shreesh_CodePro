@@ -4,7 +4,7 @@ import {
   Buildings, SquaresFour, Users, BookOpen, ChartBar,
   GraduationCap, CaretLeft, CaretRight, SignOut,
   House, Shield, Briefcase, CalendarCheck, ClipboardText,
-  NotePencil, Bell, Question
+  NotePencil, Bell, Question, X
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,9 +45,11 @@ const navItems: NavItem[] = [
 interface AppSidebarProps {
   collapsed: boolean;
   setCollapsed: (v: boolean) => void;
+  mobileOpen?: boolean;
+  setMobileOpen?: (v: boolean) => void;
 }
 
-export function AppSidebar({ collapsed, setCollapsed }: AppSidebarProps) {
+export function AppSidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: AppSidebarProps) {
   const [isMobile, setIsMobile] = useState(false);
   const { user, logout } = useAuth();
   const { hasPermission, hasAnyPermission } = usePermission();
@@ -56,8 +58,8 @@ export function AppSidebar({ collapsed, setCollapsed }: AppSidebarProps) {
   useEffect(() => {
     const checkSize = () => {
       const width = window.innerWidth;
-      setIsMobile(width < 768);
-      if (width < 1200 && width >= 768) {
+      setIsMobile(width < 1024);
+      if (width < 1200 && width >= 1024) {
         setCollapsed(true);
       }
     };
@@ -65,6 +67,13 @@ export function AppSidebar({ collapsed, setCollapsed }: AppSidebarProps) {
     window.addEventListener('resize', checkSize);
     return () => window.removeEventListener('resize', checkSize);
   }, []);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    if (isMobile && mobileOpen) {
+      setMobileOpen?.(false);
+    }
+  }, [location.pathname]);
 
   const filteredNavItems = useMemo(() => navItems.filter(item => {
     if (item.superAdminOnly) return user?.role === 'SUPERADMIN';
@@ -77,26 +86,9 @@ export function AppSidebar({ collapsed, setCollapsed }: AppSidebarProps) {
   const label = (item: NavItem) =>
     item.path === '/users' && user?.role === 'DEPARTMENT' ? 'Mentors' : item.title;
 
-  if (isMobile) return null;
-
-  return (
-    <motion.aside
-      initial={false}
-      animate={{
-        width: collapsed ? 80 : 300,
-        transition: {
-          type: "spring",
-          damping: 30,
-          stiffness: 300,
-          mass: 0.8
-        }
-      }}
-      className={cn(
-        "fixed top-20 bottom-4 left-4 z-40 flex flex-col rounded-xl overflow-hidden border border-border",
-        "bg-card text-card-foreground shadow-sm"
-      )}
-    >
-      {/* Navigation Top Padding since logo is outside */}
+  const sidebarContent = (
+    <>
+      {/* Navigation Top Padding */}
       <div className="h-2" />
 
       {/* User Profile */}
@@ -112,7 +104,7 @@ export function AppSidebar({ collapsed, setCollapsed }: AppSidebarProps) {
           </div>
 
           <AnimatePresence mode="wait">
-            {!collapsed && (
+            {(!collapsed || isMobile) && (
               <motion.div
                 initial={{ opacity: 0, x: -10, filter: 'blur(5px)' }}
                 animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
@@ -143,15 +135,15 @@ export function AppSidebar({ collapsed, setCollapsed }: AppSidebarProps) {
                   <NavLink to={item.path} className="relative block group">
                     {isActive && (
                       <motion.div
-                        layoutId="activeNav"
+                        layoutId={isMobile ? "activeNavMobile" : "activeNav"}
                         className="absolute inset-0 rounded-md bg-accent/15 border border-accent/20"
                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                       />
                     )}
                     <div className={cn(
                       "relative flex items-center h-11 px-0 rounded-md transition-all duration-200 overflow-hidden",
-                      isActive ? "text-accent" : "text-muted-foreground hover:text-foreground hover:bg-white/5",
-                      collapsed ? "justify-center" : "gap-0"
+                      isActive ? "text-accent" : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                      (!isMobile && collapsed) ? "justify-center" : "gap-0"
                     )}>
                       {/* Fixed Square Icon Container */}
                       <div className="w-11 h-11 shrink-0 flex items-center justify-center">
@@ -163,7 +155,7 @@ export function AppSidebar({ collapsed, setCollapsed }: AppSidebarProps) {
                       </div>
 
                       <AnimatePresence mode="wait">
-                        {!collapsed && (
+                        {(!collapsed || isMobile) && (
                           <motion.span
                             initial={{ opacity: 0, x: -5 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -187,32 +179,106 @@ export function AppSidebar({ collapsed, setCollapsed }: AppSidebarProps) {
       {/* Footer / Toggle */}
       <div className="relative z-10 p-3 mt-auto border-t border-border/40">
         <div className="flex flex-col gap-1">
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex items-center justify-center w-full h-9 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {collapsed ? <CaretRight size={18} /> : (
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest">
-                <CaretLeft size={16} /> Hide Sidebar
-              </div>
-            )}
-          </button>
+          {!isMobile && (
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="flex items-center justify-center w-full h-9 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {collapsed ? <CaretRight size={18} /> : (
+                <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest">
+                  <CaretLeft size={16} /> Hide Sidebar
+                </div>
+              )}
+            </button>
+          )}
 
-          {!collapsed && <div className="h-px bg-border mx-2 my-1" />}
+          {(!collapsed || isMobile) && <div className="h-px bg-border mx-2 my-1" />}
 
           <button
             onClick={logout}
             className={cn(
               "flex items-center justify-center gap-2 w-full h-9 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors",
-              collapsed && "h-10 w-full"
+              (!isMobile && collapsed) && "h-10 w-full"
             )}
             title="Logout"
           >
             <SignOut size={18} />
-            {!collapsed && <span className="text-sm font-medium">Logout</span>}
+            {(!collapsed || isMobile) && <span className="text-sm font-medium">Logout</span>}
           </button>
         </div>
       </div>
+    </>
+  );
+
+  // Mobile: slide-out drawer with backdrop
+  if (isMobile) {
+    return (
+      <>
+        {/* Backdrop */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setMobileOpen?.(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Drawer */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.aside
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+              className="fixed inset-y-0 left-0 z-50 w-[280px] flex flex-col bg-card text-card-foreground border-r border-border shadow-2xl"
+            >
+              {/* Mobile header with close button */}
+              <div className="flex items-center justify-between px-4 h-16 border-b border-border/40 shrink-0">
+                <div className="flex items-center gap-2">
+                  <img src="/logo.png" alt="Logo" className="w-7 h-7 object-contain" />
+                  <span className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>CodePro</span>
+                </div>
+                <button
+                  onClick={() => setMobileOpen?.(false)}
+                  className="p-2 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {sidebarContent}
+            </motion.aside>
+          )}
+        </AnimatePresence>
+      </>
+    );
+  }
+
+  // Desktop: fixed sidebar
+  return (
+    <motion.aside
+      initial={false}
+      animate={{
+        width: collapsed ? 80 : 300,
+        transition: {
+          type: "spring",
+          damping: 30,
+          stiffness: 300,
+          mass: 0.8
+        }
+      }}
+      className={cn(
+        "fixed top-20 bottom-4 left-4 z-40 flex flex-col rounded-xl overflow-hidden border border-border",
+        "bg-card text-card-foreground shadow-sm"
+      )}
+    >
+      {sidebarContent}
     </motion.aside>
   );
 }

@@ -84,7 +84,7 @@ export default function AddQuestions() {
 
   return (
     <div className="page-container">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-2xl font-medium tracking-tight text-foreground flex items-center gap-2" style={{ fontFamily: 'var(--font-serif)' }}>
             <FileQuestion className="h-6 w-6 text-primary" />
@@ -770,7 +770,7 @@ function ViewEditProblemModal({
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {problem.difficulty && (
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Difficulty</Label>
@@ -1017,7 +1017,7 @@ function ViewEditMcqModal({
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</Label>
                 <p className="text-sm">{question.questionType === 'SINGLE_CHOICE' ? 'Single Choice' : 'Multiple Choice'}</p>
