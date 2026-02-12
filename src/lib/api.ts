@@ -679,3 +679,16 @@ export async function uploadBulkUsers(
   }
   return res.json() as Promise<UploadResult>;
 }
+
+// ========== Notifications ==========
+export interface ApiNotification {
+  id: number;
+  type: 'info' | 'success' | 'warning' | 'error';
+  message: string;
+  createdAt: string;
+}
+
+export const notificationsApi = {
+  list: () => api<{ notifications: ApiNotification[] }>('/api/notifications'),
+};
+

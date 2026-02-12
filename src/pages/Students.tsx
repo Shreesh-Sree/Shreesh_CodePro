@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, PencilSimple as Pencil, Trash as Trash2, BookOpen, UploadSimple as Upload, CircleNotch as Loader2, FileCsv as FileSpreadsheet, X, UserPlus, UserMinus, Warning as AlertTriangle } from '@phosphor-icons/react';
+import { Plus, PencilSimple as Pencil, Trash as Trash2, Student, UploadSimple as Upload, CircleNotch as Loader2, FileCsv as FileSpreadsheet, X, CaretDown, Funnel, UserMinus, BookOpen, UserPlus, Warning as AlertTriangle } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 import { DataTable, Column, Action } from '@/components/shared/DataTable';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Can, usePermission } from '@/contexts/PermissionContext';
@@ -361,7 +362,9 @@ export default function Students() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-8 text-muted-foreground animate-pulse">Loading...</div>
+        <div className="flex justify-center py-8">
+          <BallBouncingLoader />
+        </div>
       ) : (
         <div className="neo-card p-0 overflow-hidden">
           <DataTable
@@ -410,7 +413,7 @@ export default function Students() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={formData.email} onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="student@example.com" disabled={!!editingStudent} className="bg-secondary/50 border-input" />
+                  <Input id="email" type="email" value={formData.email} onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="student@example.com" disabled={!!editingStudent && user?.role !== 'SUPERADMIN'} className="bg-secondary/50 border-input" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>

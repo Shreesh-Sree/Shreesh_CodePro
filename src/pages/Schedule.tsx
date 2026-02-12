@@ -1,29 +1,37 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { cn, getTargetColor } from '../lib/utils';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { batchesApi, departmentsApi, placementsApi, tagsApi, categoriesApi, problemsApi, mcqQuestionsApi, scheduleApi, testsApi } from '@/lib/api';
 import type { ApiCategory, ApiTestDetail } from '@/lib/api';
 import {
   CaretDown as ChevronDown,
+  CaretRight as ChevronRight,
+  CaretLeft as ChevronLeft,
   X,
   Monitor,
   ListChecks,
   CalendarBlank as Calendar,
   Users,
   FileText as FileQuestion,
-  Clock
+  Clock,
+  CheckCircle,
 } from '@phosphor-icons/react';
+import AdvancedPagination from '@/components/shared/AdvancedPagination';
 
 type TestType = 'CODING' | 'MCQ';
 type TargetType = 'placement' | 'batch' | 'department';
@@ -39,6 +47,100 @@ function toDateTimeLocal(iso: string | null): string {
   if (isNaN(d.getTime())) return '';
   return d.toISOString().slice(0, 16);
 }
+
+// Sub-component for target selection with categorized list (Filtered)
+const TargetSelector = ({
+  placements,
+  batches,
+  departments,
+  isTargetSelected,
+  toggleTarget
+}: {
+  placements: { id: string; name: string }[],
+  batches: { id: number; batchYear: string }[],
+  departments: { id: string; name: string }[],
+  isTargetSelected: (type: TargetType, id: number) => boolean,
+  toggleTarget: (type: TargetType, id: number, label: string) => void
+}) => {
+  const [activeFilter, setActiveFilter] = useState<'all' | TargetType>('all');
+
+  const renderGroup = (title: string, items: ({ id: string; name: string } | { id: number; batchYear: string })[], type: TargetType) => {
+    if (items.length === 0) return null;
+    if (activeFilter !== 'all' && activeFilter !== type) return null;
+
+    return (
+      <div className="mb-6 last:mb-0 animate-in fade-in duration-300">
+        <h4 className="text-xs font-black text-primary/60 px-3 py-2 uppercase tracking-[0.2em] mb-2 sticky top-0 bg-background/95 backdrop-blur-sm z-10 border-b border-border/50">
+          {title}
+        </h4>
+        <div className="grid grid-cols-1 gap-1 px-2">
+          {items.map((item: any) => (
+            <label
+              key={`${type}-${item.id}`}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 cursor-pointer transition-all border border-transparent hover:border-primary/10 group"
+            >
+              <Checkbox
+                checked={isTargetSelected(type, Number(item.id))}
+                onCheckedChange={() => toggleTarget(type, Number(item.id), item.label || item.batchYear || item.name)}
+              />
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                  {item.label || item.batchYear || item.name}
+                </span>
+                <span className={cn("text-[10px] uppercase font-bold tracking-wider font-mono px-1.5 py-0.5 rounded-sm w-fit mt-1", getTargetColor(type))}>
+                  {type}
+                </span>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const hasAnyItems = placements.length > 0 || departments.length > 0 || batches.length > 0;
+
+  return (
+    <div className="flex flex-col h-[450px] overflow-hidden">
+      {/* Filter Tabs */}
+      <div className="p-3 border-b border-border/50 bg-muted/20 flex gap-2 overflow-x-auto no-scrollbar items-center">
+        {[
+          { id: 'all', label: 'All' },
+          { id: 'placement', label: 'Placements' },
+          { id: 'department', label: 'Departments' },
+          { id: 'batch', label: 'Batches' }
+        ].map((filter) => (
+          <button
+            key={filter.id}
+            onClick={() => setActiveFilter(filter.id as any)}
+            className={cn(
+              "px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap",
+              activeFilter === filter.id
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border border-border/50"
+            )}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+        {hasAnyItems ? (
+          <>
+            {renderGroup('Placements', placements, 'placement')}
+            {renderGroup('Departments', departments, 'department')}
+            {renderGroup('Batches', batches, 'batch')}
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground italic text-sm">
+            No items available
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default function Schedule() {
   const navigate = useNavigate();
@@ -68,8 +170,8 @@ export default function Schedule() {
   const [selectedMcqQuestions, setSelectedMcqQuestions] = useState<{ id: number; question: string; tagIds?: number[] }[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [name, setName] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
+  const [startTime, setStartTime] = useState<Date | undefined>(undefined);
+  const [endTime, setEndTime] = useState<Date | undefined>(undefined);
   const [durationMinutes, setDurationMinutes] = useState<number>(60);
   const [loading, setLoading] = useState(false);
   const [targetPopoverOpen, setTargetPopoverOpen] = useState(false);
@@ -81,8 +183,8 @@ export default function Schedule() {
       .then(({ test }) => {
         setEditTest(test);
         setName(test.name);
-        setStartTime(toDateTimeLocal(test.startTime));
-        setEndTime(toDateTimeLocal(test.endTime));
+        setStartTime(new Date(test.startTime));
+        setEndTime(new Date(test.endTime));
         setDurationMinutes(typeof test.durationMinutes === 'number' ? test.durationMinutes : 60);
         setTestType((test.testType as TestType) || 'CODING');
       })
@@ -140,7 +242,7 @@ export default function Schedule() {
   }, [editTest, batches, departments, placements]);
 
   useEffect(() => {
-    if (!editMode || !editTest || step < 3 || !testType) return;
+    if (!editMode || !editTest || !testType) return;
     if (testType === 'CODING' && problems.length > 0 && (editTest.problemIds?.length ?? 0) > 0 && !editQuestionsSeeded.current) {
       editQuestionsSeeded.current = true;
       setSelectedProblems(problems.filter((p) => editTest.problemIds!.includes(p.id)));
@@ -283,8 +385,8 @@ export default function Schedule() {
           }
           await testsApi.update(testId, {
             name: name.trim(),
-            startTime,
-            endTime,
+            startTime: startTime!.toISOString(),
+            endTime: endTime!.toISOString(),
             durationMinutes: duration,
             batchIds,
             departmentIds,
@@ -299,8 +401,8 @@ export default function Schedule() {
           }
           await testsApi.update(testId, {
             name: name.trim(),
-            startTime,
-            endTime,
+            startTime: startTime!.toISOString(),
+            endTime: endTime!.toISOString(),
             durationMinutes: duration,
             batchIds,
             departmentIds,
@@ -324,8 +426,8 @@ export default function Schedule() {
           batchIds,
           departmentIds,
           placementIds,
-          startTime,
-          endTime,
+          startTime: startTime!.toISOString(),
+          endTime: endTime!.toISOString(),
           durationMinutes: duration,
           problemIds: selectedProblemIds,
         });
@@ -341,8 +443,8 @@ export default function Schedule() {
           batchIds,
           departmentIds,
           placementIds,
-          startTime,
-          endTime,
+          startTime: startTime!.toISOString(),
+          endTime: endTime!.toISOString(),
           durationMinutes: duration,
           mcqQuestionIds: selectedMcqIds,
         });
@@ -356,247 +458,259 @@ export default function Schedule() {
     }
   };
 
+  const steps = [
+    { id: 1, title: 'Test Type', desc: 'Choose Coding or MCQ' },
+    { id: 2, title: 'Assign To', desc: 'Select placements, batches, or departments' },
+    { id: 3, title: 'Questions', desc: 'Add problems or questions' },
+    { id: 4, title: 'Schedule', desc: 'Set dates and duration' },
+  ];
+
+  const handleTestTypeSelect = (type: TestType) => {
+    if (editMode) return;
+    setTestType(type);
+    setStep(2); // Auto-advance
+  };
+
+  const nextStep = () => setStep((s) => Math.min(s + 1, 4));
+  const prevStep = () => setStep((s) => Math.max(s - 1, 1));
+
   if (editMode && editLoading) {
     return (
       <div className="page-container">
-        <div className="flex justify-center py-12 text-muted-foreground animate-pulse">Loading test...</div>
+        <div className="flex justify-center py-12 text-muted-foreground animate-pulse">
+          <BallBouncingLoader />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="page-container">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-medium tracking-tight text-foreground flex items-center gap-2" style={{ fontFamily: 'var(--font-serif)' }}>
-            <Calendar className="h-6 w-6 text-primary" />
-            {editMode ? 'Edit / Reschedule Test' : 'Schedule Test'}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1.5">
-            {editMode
-              ? 'Update name, time, targets, or questions. Only allowed before the test starts.'
-              : 'Create a coding or MCQ test and assign to placements, batches, or departments.'}
-          </p>
+    <div className="page-container max-w-4xl mx-auto">
+      <div className="mb-8 text-center sm:text-left">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center justify-center sm:justify-start gap-3" style={{ fontFamily: 'var(--font-serif)' }}>
+          <Calendar className="h-8 w-8 text-primary shrink-0" />
+          {editMode ? 'Edit / Reschedule Test' : 'Schedule Test'}
+        </h1>
+        <p className="text-base text-muted-foreground mt-2 max-w-2xl">
+          {editMode
+            ? 'Update name, time, targets, or questions.'
+            : 'Create a coding or MCQ test in 4 steps. Your assessments help track student progress.'}
+        </p>
+      </div>
+
+      {/* Stepper Container */}
+      <div className="mb-12 pt-6 pb-12 px-10 rounded-2xl bg-muted/20 border border-border/50 relative overflow-hidden backdrop-blur-sm">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/5 rounded-full -ml-16 -mb-16 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 w-full max-w-4xl mx-auto">
+          <div className="flex items-center justify-between relative w-full">
+            {steps.map((s) => {
+              const isActive = s.id === step;
+              const isCompleted = s.id < step;
+
+              return (
+                <div
+                  key={s.id}
+                  className={cn("flex flex-col items-center relative group", (editMode || isCompleted) ? "cursor-pointer" : "cursor-default")}
+                  onClick={() => {
+                    if (editMode || isCompleted) setStep(s.id);
+                  }}
+                >
+                  <div
+                    className={cn(
+                      "w-12 h-12 rounded-full flex items-center justify-center font-bold text-base transition-all duration-500 border-2 bg-background z-20 relative",
+                      isActive ? "border-primary text-primary scale-110 shadow-[0_0_25px_rgba(var(--primary),0.35)]" :
+                        isCompleted ? "border-primary bg-primary text-primary-foreground" :
+                          "border-muted-foreground/30 text-muted-foreground/40 group-hover:border-muted-foreground/60"
+                    )}
+                  >
+                    {isCompleted ? (
+                      <span className="animate-in zoom-in duration-300">
+                        <CheckCircle weight="bold" className="w-6 h-6" />
+                      </span>
+                    ) : (
+                      <span>{s.id}</span>
+                    )}
+
+                    {isActive && (
+                      <span className="absolute inset-0 rounded-full animate-ping opacity-25 bg-primary" />
+                    )}
+                  </div>
+
+                  <span className="absolute top-16 whitespace-nowrap text-[12px] font-black tracking-[0.2em] uppercase transition-all duration-300">
+                    {s.title}
+                  </span>
+                </div>
+              );
+            })}
+
+            {/* Progress Line Background */}
+            <div className="absolute top-6 left-[calc(3rem/2)] right-[calc(3rem/2)] h-[3px] bg-muted/40 z-0 rounded-full">
+              <div
+                className="h-full bg-primary transition-all duration-700 ease-in-out shadow-[0_0_15px_rgba(var(--primary),0.6)]"
+                style={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="neo-card p-0 overflow-hidden mb-6">
-        <div className="border-b bg-muted/30 px-6 py-4">
-          <h3 className="text-lg font-medium tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>Step 1: Test type</h3>
-          <p className="text-sm text-muted-foreground mt-1">Choose Coding or MCQ</p>
-        </div>
-        <div className="p-6">
-          <div className="flex gap-4">
-            <Button
-              variant={testType === 'CODING' ? 'default' : 'outline'}
-              onClick={() => !editMode && setTestType('CODING')}
-              disabled={editMode}
-              className={`h-auto py-4 px-6 flex-col gap-2 ${testType === 'CODING' ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-            >
-              <Monitor className="h-6 w-6" />
-              <span className="font-medium">Coding</span>
-            </Button>
-            <Button
-              variant={testType === 'MCQ' ? 'default' : 'outline'}
-              onClick={() => !editMode && setTestType('MCQ')}
-              disabled={editMode}
-              className={`h-auto py-4 px-6 flex-col gap-2 ${testType === 'MCQ' ? 'ring-2 ring-primary ring-offset-2' : ''}`}
-            >
-              <ListChecks className="h-6 w-6" />
-              <span className="font-medium">MCQ</span>
-            </Button>
-            {testType && (
-              <div className="flex items-center ml-auto">
-                <Button onClick={() => setStep(2)}>Next Step</Button>
+      <div className="neo-card p-0 overflow-hidden min-h-[450px] shadow-xl border-border/60 flex flex-col bg-card/50 backdrop-blur-md">
+        {/* Step 1: Test Type */}
+        {step === 1 && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex-1 flex flex-col">
+            <div className="border-b bg-muted/30 px-6 py-4">
+              <h3 className="text-lg font-medium tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>Step 1: Test type</h3>
+              <p className="text-sm text-muted-foreground mt-1">Choose the format of your assessment.</p>
+            </div>
+            <div className="px-8 py-12 flex items-center justify-center flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-xl">
+                <button
+                  type="button"
+                  onClick={() => handleTestTypeSelect('CODING')}
+                  disabled={editMode}
+                  className={`group relative flex flex-col items-center justify-center gap-4 p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] ${testType === 'CODING'
+                    ? 'border-primary bg-primary/5 shadow-xl shadow-primary/10'
+                    : 'border-border bg-card hover:border-primary/40 hover:bg-muted/10'
+                    }`}
+                >
+                  <div className={`h-14 w-14 rounded-xl flex items-center justify-center transition-all duration-500 ${testType === 'CODING' ? 'bg-primary text-primary-foreground rotate-6' : 'bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary group-hover:rotate-6'}`}>
+                    <Monitor className="h-7 w-7" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className={`font-bold text-lg ${testType === 'CODING' ? 'text-primary' : 'text-foreground'}`}>Coding Test</h3>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-[150px]">Programming problems with test cases</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleTestTypeSelect('MCQ')}
+                  disabled={editMode}
+                  className={`group relative flex flex-col items-center justify-center gap-4 p-6 rounded-2xl border-2 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] ${testType === 'MCQ'
+                    ? 'border-primary bg-primary/5 shadow-xl shadow-primary/10'
+                    : 'border-border bg-card hover:border-primary/40 hover:bg-muted/10'
+                    }`}
+                >
+                  <div className={`h-14 w-14 rounded-xl flex items-center justify-center transition-all duration-500 ${testType === 'MCQ' ? 'bg-primary text-primary-foreground rotate-6' : 'bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary group-hover:rotate-6'}`}>
+                    <ListChecks className="h-7 w-7" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className={`font-bold text-lg ${testType === 'MCQ' ? 'text-primary' : 'text-foreground'}`}>MCQ Test</h3>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-[150px]">Multiple choice questions</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+            {editMode && (
+              <div className="p-4 border-t bg-muted/30 flex justify-end">
+                <Button onClick={nextStep}>
+                  Next Step <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
             )}
           </div>
-        </div>
-      </div>
+        )}
 
-      {testType && (
-        <div className={`neo-card p-0 overflow-hidden mb-6 transition-all duration-300 ${step < 2 ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-          <div className="border-b bg-muted/30 px-6 py-4">
-            <h3 className="text-lg font-medium tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>Step 2: Assign To</h3>
-            <p className="text-sm text-muted-foreground mt-1">Select one or more placements, batches, or departments.</p>
-          </div>
-          <div className="p-6 space-y-4">
-            <div>
-              <Label className="mb-2 block">Targets</Label>
-              <Popover open={targetPopoverOpen} onOpenChange={setTargetPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal bg-card">
-                    <Users className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>Add placement, batch, or department...</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-0 neo-card-flat" align="start">
-                  <div className="max-h-72 overflow-y-auto p-2">
-                    <p className="text-xs font-medium text-muted-foreground px-2 py-1 uppercase tracking-wider">Placements</p>
-                    {placements.map((p) => (
-                      <label
-                        key={`p-${p.id}`}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-muted cursor-pointer transition-colors"
-                      >
-                        <Checkbox
-                          checked={isTargetSelected('placement', Number(p.id))}
-                          onCheckedChange={() => toggleTarget('placement', Number(p.id), p.name)}
-                        />
-                        <span className="text-sm">{p.name}</span>
-                      </label>
+        {/* Step 2: Targets */}
+        {step === 2 && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex-1 flex flex-col">
+            <div className="border-b bg-muted/30 px-6 py-4">
+              <h3 className="text-lg font-medium tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>Step 2: Assign To</h3>
+              <p className="text-sm text-muted-foreground mt-1">Who is taking this test?</p>
+            </div>
+            <div className="p-6 flex-1">
+              <div className="max-w-xl mx-auto space-y-6">
+                <div>
+                  <Label className="mb-3 block text-base">Select Targets</Label>
+                  <Popover open={targetPopoverOpen} onOpenChange={setTargetPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal bg-card h-12">
+                        <Users className="mr-2 h-5 w-5 text-muted-foreground" />
+                        <span>Add placement, batch, or department...</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 neo-card-flat overflow-hidden" align="start">
+                      <TargetSelector
+                        placements={placements}
+                        batches={batches}
+                        departments={departments}
+                        isTargetSelected={isTargetSelected}
+                        toggleTarget={toggleTarget}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="min-h-[100px] p-4 rounded-lg border border-dashed border-border bg-muted/20">
+                  <div className="flex flex-wrap gap-2">
+                    {targets.map((t) => (
+                      <span key={`${t.type}-${t.id}`} className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1 text-sm shadow-sm animate-in scale-in duration-200">
+                        <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0 h-5 rounded-sm uppercase tracking-wide border-0", getTargetColor(t.type))}>{t.type}</Badge>
+                        <span>{t.label}</span>
+                        <button type="button" className="ml-1 rounded-full hover:bg-muted p-0.5 text-muted-foreground hover:text-foreground transition-colors" onClick={() => removeTarget(t.type, t.id)}>
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
                     ))}
-                    <p className="text-xs font-medium text-muted-foreground px-2 py-1 mt-2 uppercase tracking-wider">Batches</p>
-                    {batches.map((b) => (
-                      <label
-                        key={`b-${b.id}`}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-muted cursor-pointer transition-colors"
-                      >
-                        <Checkbox
-                          checked={isTargetSelected('batch', b.id)}
-                          onCheckedChange={() => toggleTarget('batch', b.id, b.batchYear)}
-                        />
-                        <span className="text-sm">{b.batchYear}</span>
-                      </label>
-                    ))}
-                    <p className="text-xs font-medium text-muted-foreground px-2 py-1 mt-2 uppercase tracking-wider">Departments</p>
-                    {departments.map((d) => (
-                      <label
-                        key={`d-${d.id}`}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-muted cursor-pointer transition-colors"
-                      >
-                        <Checkbox
-                          checked={isTargetSelected('department', Number(d.id))}
-                          onCheckedChange={() => toggleTarget('department', Number(d.id), d.name)}
-                        />
-                        <span className="text-sm">{d.name}</span>
-                      </label>
-                    ))}
+                    {targets.length === 0 && <span className="text-sm text-muted-foreground flex w-full h-full items-center justify-center italic py-8">No targets selected yet</span>}
                   </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="flex flex-wrap gap-2 min-h-[32px]">
-              {targets.map((t) => (
-                <span
-                  key={`${t.type}-${t.id}`}
-                  className="inline-flex items-center gap-1 rounded-full border bg-muted/50 px-3 py-1 text-sm shadow-sm"
-                >
-                  <span className="font-medium text-xs uppercase tracking-wide text-muted-foreground mr-1">{t.type}</span>
-                  <span>{t.label}</span>
-                  <button
-                    type="button"
-                    className="ml-1 rounded-full hover:bg-muted p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() => removeTarget(t.type, t.id)}
-                    aria-label="Remove"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </span>
-              ))}
-              {targets.length === 0 && <span className="text-sm text-muted-foreground italic">No targets selected</span>}
-            </div>
-            <div className="flex justify-end pt-2">
-              <Button
-                onClick={() => {
-                  if (targets.length > 0) setStep(3);
-                  else toast({ title: 'Select at least one target', variant: 'destructive' });
-                }}
-                disabled={targets.length === 0}
-              >
-                Next Step
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {testType && targets.length > 0 && (
-        <div className={`neo-card p-0 overflow-hidden mb-6 transition-all duration-300 ${step < 3 ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-          <div className="border-b bg-muted/30 px-6 py-4">
-            <h3 className="text-lg font-medium tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>Step 3: Select Questions</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {testType === 'CODING'
-                ? 'Pick a category, then add coding problems. Used in selected batches are excluded.'
-                : 'Pick a category, then add MCQ questions. Used in selected batches are excluded.'}
-            </p>
-          </div>
-          <div className="p-6 space-y-6">
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Selected Questions</Label>
-              <div className="flex flex-wrap gap-2 min-h-[50px] rounded-lg border border-border/50 bg-muted/10 p-4">
-                {testType === 'CODING'
-                  ? selectedProblems.map((p) => (
-                    <span
-                      key={p.id}
-                      className="inline-flex items-center gap-1.5 rounded-full border bg-background pl-2 pr-3 py-1 text-sm shadow-sm"
-                    >
-                      <button
-                        type="button"
-                        className="rounded-full hover:bg-muted p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                        onClick={() => removeProblem(p.id)}
-                        aria-label="Remove"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                      <span className="font-medium truncate max-w-[200px]">{p.title}</span>
-                    </span>
-                  ))
-                  : selectedMcqQuestions.map((q) => (
-                    <span
-                      key={q.id}
-                      className="inline-flex items-center gap-1.5 rounded-full border bg-background pl-2 pr-3 py-1 text-sm shadow-sm max-w-full"
-                    >
-                      <button
-                        type="button"
-                        className="rounded-full hover:bg-muted p-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                        onClick={() => removeMcq(q.id)}
-                        aria-label="Remove"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                      <span className="truncate max-w-[200px]">{q.question}</span>
-                    </span>
-                  ))}
-                {(testType === 'CODING' ? selectedProblems.length : selectedMcqQuestions.length) === 0 && (
-                  <span className="text-sm text-muted-foreground flex items-center justify-center w-full h-full italic">None selected yet.</span>
-                )}
+                </div>
               </div>
             </div>
+            <div className="p-4 border-t bg-muted/30 flex justify-between">
+              <Button variant="ghost" onClick={prevStep}>Back</Button>
+              <Button onClick={() => {
+                if (targets.length > 0) nextStep();
+                else toast({ title: 'Select at least one target', variant: 'destructive' });
+              }}>Next Step <ChevronRight className="ml-2 h-4 w-4" /></Button>
+            </div>
+          </div>
+        )}
 
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Add Questions</Label>
-              <Popover open={questionsDropdownOpen} onOpenChange={setQuestionsDropdownOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-between font-normal bg-card"
-                    disabled={questionsLoading}
-                  >
-                    <span className="flex items-center gap-2">
-                      <FileQuestion className="h-4 w-4 text-muted-foreground" />
-                      {questionsLoading
-                        ? 'Loading...'
-                        : testType === 'CODING'
-                          ? `${selectedProblems.length} problem(s) selected`
-                          : `${selectedMcqQuestions.length} question(s) selected`}
-                    </span>
-                    <ChevronDown className={`h-4 w-4 transition-transform opacity-50 ${questionsDropdownOpen ? 'rotate-180' : ''}`} />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[400px] p-0 neo-card-flat" align="start">
-                  <div className="max-h-[320px] overflow-y-auto p-2">
-                    {testType === 'CODING' &&
-                      categories.map((cat) => {
+        {/* Step 3: Questions */}
+        {step === 3 && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex-1 flex flex-col">
+            <div className="border-b bg-muted/30 px-6 py-4">
+              <h3 className="text-lg font-medium tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>Step 3: Select Questions</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {testType === 'CODING' ? 'Add coding problems.' : 'Add MCQ questions.'}
+              </p>
+            </div>
+            <div className="p-6 flex-1 space-y-6">
+              {/* Used questions logic is same as before, just UI tweak */}
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Add Questions</Label>
+                <Popover open={questionsDropdownOpen} onOpenChange={setQuestionsDropdownOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between h-12 font-normal bg-card" disabled={questionsLoading}>
+                      <span className="flex items-center gap-2">
+                        {questionsLoading ? (
+                          <>
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            <span>Loading questions...</span>
+                          </>
+                        ) : (
+                          <>
+                            <FileQuestion className="h-5 w-5 text-muted-foreground" />
+                            <span>{testType === 'CODING' ? 'Browse Coding Problems...' : 'Browse MCQ Questions...'}</span>
+                          </>
+                        )}
+                      </span>
+                      {!questionsLoading && <ChevronDown className={`h-4 w-4 transition-transform opacity-50 ${questionsDropdownOpen ? 'rotate-180' : ''}`} />}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[500px] p-0 neo-card-flat" align="start">
+                    <div className="max-h-[400px] overflow-y-auto p-2">
+                      {/* Reuse existing category mapping logic but inside this new container */}
+                      {testType === 'CODING' && categories.map((cat) => {
                         const items = problemsByCategory.get(cat.id) ?? [];
                         if (items.length === 0) return null;
                         const expanded = isCategoryExpanded(cat.id);
                         return (
                           <div key={cat.id} className="mb-1">
-                            <button
-                              type="button"
-                              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                              onClick={() => toggleCategoryExpanded(cat.id)}
-                            >
+                            <button type="button" className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm font-medium hover:bg-muted transition-colors" onClick={() => toggleCategoryExpanded(cat.id)}>
                               <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
                               {cat.name}
                             </button>
@@ -607,15 +721,8 @@ export default function Schedule() {
                                   const used = usedProblemIds.includes(p.id);
                                   return (
                                     <li key={p.id}>
-                                      <label
-                                        className={`flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-muted transition-colors ${used ? 'cursor-not-allowed opacity-60' : ''
-                                          }`}
-                                      >
-                                        <Checkbox
-                                          checked={checked}
-                                          disabled={used}
-                                          onCheckedChange={() => (used ? undefined : checked ? removeProblem(p.id) : addProblem(p))}
-                                        />
+                                      <label className={`flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-muted transition-colors ${used ? 'cursor-not-allowed opacity-60' : ''}`}>
+                                        <Checkbox checked={checked} disabled={used} onCheckedChange={() => (used ? undefined : checked ? removeProblem(p.id) : addProblem(p))} />
                                         <span className="flex-1 truncate">{p.title}</span>
                                         {used && <span className="text-xs text-muted-foreground">(used)</span>}
                                       </label>
@@ -627,10 +734,7 @@ export default function Schedule() {
                           </div>
                         );
                       })}
-                    {/* ... (Repeat similar logic for MCQ and Uncategorized, omitting for brevity in thought but including in file) ... */}
-                    {/* I will include the full logic in the actual file content below */}
-                    {testType === 'MCQ' &&
-                      categories.map((cat) => {
+                      {testType === 'MCQ' && categories.map((cat) => {
                         const items = mcqByCategory.get(cat.id) ?? [];
                         if (items.length === 0) return null;
                         const expanded = isCategoryExpanded(cat.id);
@@ -671,150 +775,131 @@ export default function Schedule() {
                           </div>
                         );
                       })}
+                      {(testType === 'CODING' ? problemsByCategory : mcqByCategory).get(null)?.length ? (
+                        <div className="mb-1">
+                          <button type="button" className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm font-medium hover:bg-muted transition-colors" onClick={() => toggleCategoryExpanded('uncategorized')}>
+                            <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${isCategoryExpanded('uncategorized') ? 'rotate-180' : ''}`} />
+                            Uncategorized
+                          </button>
+                          {isCategoryExpanded('uncategorized') && (
+                            <ul className="ml-4 mt-0.5 space-y-0.5 border-l border-muted pl-2">
+                              {((testType === 'CODING' ? problemsByCategory : mcqByCategory).get(null) ?? []).map((item: any) => {
+                                const checked = testType === 'CODING' ? selectedProblemIds.includes(item.id) : selectedMcqIds.includes(item.id);
+                                const used = testType === 'CODING' ? usedProblemIds.includes(item.id) : usedMcqIds.includes(item.id);
+                                return (
+                                  <li key={item.id}>
+                                    <label className={`flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-muted transition-colors ${used ? 'cursor-not-allowed opacity-60' : ''}`}>
+                                      <Checkbox checked={checked} disabled={used} onCheckedChange={() => (used ? undefined : checked ? (testType === 'CODING' ? removeProblem(item.id) : removeMcq(item.id)) : (testType === 'CODING' ? addProblem(item) : addMcq(item)))} />
+                                      <span className="flex-1 truncate">{testType === 'CODING' ? item.title : item.question}</span>
+                                      {used && <span className="text-xs text-muted-foreground">(used)</span>}
+                                    </label>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-                    {/* Uncategorized Coding */}
-                    {testType === 'CODING' && (problemsByCategory.get(null)?.length ?? 0) > 0 && (() => {
-                      const expanded = isCategoryExpanded('uncategorized');
-                      return (
-                        <div className="mb-1">
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                            onClick={() => toggleCategoryExpanded('uncategorized')}
-                          >
-                            <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-                            Uncategorized
+              <div>
+                <Label className="text-sm font-medium mb-3 block">Selected {testType === 'CODING' ? 'Problems' : 'Questions'} ({testType === 'CODING' ? selectedProblems.length : selectedMcqQuestions.length})</Label>
+                <div className="min-h-[150px] p-4 rounded-lg border border-border bg-muted/10 max-h-[300px] overflow-y-auto">
+                  <div className="flex flex-wrap gap-2">
+                    {testType === 'CODING'
+                      ? selectedProblems.map((p) => (
+                        <span key={p.id} className="inline-flex items-center gap-1.5 rounded-md border bg-background pl-3 pr-2 py-1.5 text-sm shadow-sm animate-in zoom-in-50 duration-200">
+                          <span className="font-medium truncate max-w-[200px]">{p.title}</span>
+                          <button type="button" className="ml-1 rounded-full hover:bg-muted p-1 text-muted-foreground hover:text-foreground transition-colors" onClick={() => removeProblem(p.id)}>
+                            <X className="h-3.5 w-3.5" />
                           </button>
-                          {expanded && (
-                            <ul className="ml-4 mt-0.5 space-y-0.5 border-l border-muted pl-2">
-                              {(problemsByCategory.get(null) ?? []).map((p) => {
-                                const checked = selectedProblemIds.includes(p.id);
-                                const used = usedProblemIds.includes(p.id);
-                                return (
-                                  <li key={p.id}>
-                                    <label className={`flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-muted transition-colors ${used ? 'cursor-not-allowed opacity-60' : ''}`}>
-                                      <Checkbox
-                                        checked={checked}
-                                        disabled={used}
-                                        onCheckedChange={() => (used ? undefined : checked ? removeProblem(p.id) : addProblem(p))}
-                                      />
-                                      <span className="flex-1 truncate">{p.title}</span>
-                                      {used && <span className="text-xs text-muted-foreground">(used)</span>}
-                                    </label>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
-                        </div>
-                      );
-                    })()}
-                    {/* Uncategorized MCQ */}
-                    {testType === 'MCQ' && (mcqByCategory.get(null)?.length ?? 0) > 0 && (() => {
-                      const expanded = isCategoryExpanded('uncategorized');
-                      return (
-                        <div className="mb-1">
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                            onClick={() => toggleCategoryExpanded('uncategorized')}
-                          >
-                            <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-                            Uncategorized
+                        </span>
+                      ))
+                      : selectedMcqQuestions.map((q) => (
+                        <span key={q.id} className="inline-flex items-center gap-1.5 rounded-md border bg-background pl-3 pr-2 py-1.5 text-sm shadow-sm animate-in zoom-in-50 duration-200">
+                          <span className="truncate max-w-[200px]">{q.question}</span>
+                          <button type="button" className="ml-1 rounded-full hover:bg-muted p-1 text-muted-foreground hover:text-foreground transition-colors" onClick={() => removeMcq(q.id)}>
+                            <X className="h-3.5 w-3.5" />
                           </button>
-                          {expanded && (
-                            <ul className="ml-4 mt-0.5 space-y-0.5 border-l border-muted pl-2">
-                              {(mcqByCategory.get(null) ?? []).map((q) => {
-                                const checked = selectedMcqIds.includes(q.id);
-                                const used = usedMcqIds.includes(q.id);
-                                return (
-                                  <li key={q.id}>
-                                    <label className={`flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-muted transition-colors ${used ? 'cursor-not-allowed opacity-60' : ''}`}>
-                                      <Checkbox
-                                        checked={checked}
-                                        disabled={used}
-                                        onCheckedChange={() => (used ? undefined : checked ? removeMcq(q.id) : addMcq(q))}
-                                      />
-                                      <span className="flex-1 truncate">{q.question}</span>
-                                      {used && <span className="text-xs text-muted-foreground">(used)</span>}
-                                    </label>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
-                        </div>
-                      );
-                    })()}
+                        </span>
+                      ))}
+                    {(testType === 'CODING' ? selectedProblems.length : selectedMcqQuestions.length) === 0 && (
+                      <div className="w-full flex flex-col items-center justify-center py-8 text-muted-foreground opacity-50">
+                        <FileQuestion className="h-8 w-8 mb-2" />
+                        <span className="text-sm">No questions selected yet</span>
+                      </div>
+                    )}
                   </div>
-                </PopoverContent>
-              </Popover>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-end pt-2">
-              <Button
-                onClick={() => setStep(4)}
-                disabled={testType === 'CODING' ? selectedProblems.length === 0 : selectedMcqQuestions.length === 0}
-              >
-                Next Step
-              </Button>
+            <div className="p-4 border-t bg-muted/30 flex justify-between">
+              <Button variant="ghost" onClick={prevStep}>Back</Button>
+              <Button onClick={() => {
+                if ((testType === 'CODING' ? selectedProblems.length : selectedMcqQuestions.length) > 0) nextStep();
+                else toast({ title: 'Select at least one question', variant: 'destructive' });
+              }}>Next Step <ChevronRight className="ml-2 h-4 w-4" /></Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {testType && targets.length > 0 && (
-        <div className={`neo-card p-0 overflow-hidden mb-6 transition-all duration-300 ${step < 4 ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-          <div className="border-b bg-muted/30 px-6 py-4">
-            <h3 className="text-lg font-medium tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>Step 4: Finalize & Schedule</h3>
-            <p className="text-sm text-muted-foreground mt-1">Set the test name, schedule, and duration.</p>
-          </div>
-          <div className="p-6 space-y-4">
-            <div>
-              <Label htmlFor="name" className="text-sm font-medium">Test Name</Label>
-              <Input id="name" className="mt-1" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Week 1 Assessment" />
+        {/* Step 4: Finalize */}
+        {step === 4 && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300 flex-1 flex flex-col">
+            <div className="border-b bg-muted/30 px-6 py-4">
+              <h3 className="text-lg font-medium tracking-tight" style={{ fontFamily: 'var(--font-serif)' }}>Step 4: Finalize & Schedule</h3>
+              <p className="text-sm text-muted-foreground mt-1">Set the test timing and duration.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startTime" className="text-sm font-medium">Start Time</Label>
-                <div className="relative mt-1">
-                  <Input type="datetime-local" id="startTime" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="pl-10" />
-                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <div className="p-6 flex-1 max-w-2xl mx-auto w-full space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name" className="text-sm font-medium">Test Name</Label>
+                  <Input id="name" className="mt-1 h-11" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Week 1 Assessment" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="startTime" className="text-sm font-medium">Start Time</Label>
+                    <div className="relative mt-1">
+                      <DateTimePicker date={startTime} setDate={setStartTime} label="Pick start time" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="endTime" className="text-sm font-medium">End Time</Label>
+                    <div className="relative mt-1">
+                      <DateTimePicker date={endTime} setDate={setEndTime} label="Pick end time" />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="duration" className="text-sm font-medium">Duration (minutes)</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      type="number"
+                      id="duration"
+                      min={1}
+                      max={600}
+                      className="pl-10 h-11"
+                      value={durationMinutes}
+                      onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 60)}
+                    />
+                    <Clock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5 ml-1">Standard duration: 60 minutes</p>
                 </div>
               </div>
-              <div>
-                <Label htmlFor="endTime" className="text-sm font-medium">End Time</Label>
-                <div className="relative mt-1">
-                  <Input type="datetime-local" id="endTime" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="pl-10" />
-                  <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                </div>
-              </div>
             </div>
-            <div>
-              <Label htmlFor="duration" className="text-sm font-medium">Duration (minutes)</Label>
-              <div className="relative mt-1">
-                <Input
-                  type="number"
-                  id="duration"
-                  min={1}
-                  max={600}
-                  className="pl-10"
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(Math.max(1, Math.min(600, parseInt(e.target.value, 10) || 60)))}
-                />
-                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Amount of time a student has to complete the test once started.
-              </p>
-            </div>
-            <div className="flex justify-end pt-4">
-              <Button onClick={handleSubmit} disabled={loading} size="lg">
-                {loading ? (editMode ? 'Updating...' : 'Scheduling...') : editMode ? 'Update Test' : 'Schedule Test'}
+            <div className="p-4 border-t bg-muted/30 flex justify-between">
+              <Button variant="ghost" onClick={prevStep}>Back</Button>
+              <Button onClick={handleSubmit} disabled={loading} className="min-w-[140px]">
+                {loading ? 'Scheduling...' : editMode ? 'Update Test' : 'Schedule Test'}
               </Button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </div >
   );
 }

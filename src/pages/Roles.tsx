@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, PencilSimple as Pencil, Trash as Trash2, Shield } from '@phosphor-icons/react';
+import { Plus, PencilSimple as Pencil, Trash as Trash2, Shield, CircleNotch as Loader2, Check } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 import { DataTable, Column, Action } from '@/components/shared/DataTable';
 import { rolesApi, permissionsApi, ApiRole, ApiPermission } from '@/lib/api';
 import {
@@ -56,10 +57,10 @@ function permissionToLabel(permission: string): string {
   const actionStr = actionLabels[action] ?? action.replace(/_/g, ' ');
   const resourceStr = resourceLabels[resource] ?? resource.charAt(0).toUpperCase() + resource.slice(1);
   if (action === 'bulk_create' && resource === 'student') return 'Bulk Create Students';
-  if (action === 'read_own') return `${actionStr} ${resourceStr}`;
+  if (action === 'read_own') return `${actionStr} ${resourceStr} `;
   if (resource === 'test' && action === 'schedule') return 'Schedule Test';
   if (resource === 'test' && action === 'view_results') return 'View Test Results (legacy)';
-  return `${actionStr} ${resourceStr}`;
+  return `${actionStr} ${resourceStr} `;
 }
 
 /** Category order and display names for grouping permissions */
@@ -239,7 +240,7 @@ export default function Roles() {
     const isAdding = !formData.permissions.includes(perm);
     const [resource, action] = perm.split(':');
     const needsRead = isAdding && resource && ['create', 'update', 'delete', 'bulk_create'].includes(action);
-    const readPerm = resource ? `${resource}:read` : null;
+    const readPerm = resource ? `${resource}: read` : null;
     const hasReadInList = readPerm && allPermissionStrings.includes(readPerm);
 
     setFormData(prev => {
@@ -270,7 +271,9 @@ export default function Roles() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-8 text-muted-foreground animate-pulse">Loading...</div>
+        <div className="flex justify-center py-8">
+          <BallBouncingLoader />
+        </div>
       ) : (
         <div className="neo-card p-0 overflow-hidden">
           <DataTable
@@ -323,11 +326,11 @@ export default function Roles() {
                       {perms.map(p => (
                         <label
                           key={p.id}
-                          htmlFor={`perm-${p.id}`}
-                          className={`flex items-center gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-colors duration-200 hover:bg-muted/60 ${formData.permissions.includes(p.permission) ? 'bg-primary/10' : ''}`}
+                          htmlFor={`perm - ${p.id} `}
+                          className={`flex items - center gap - 3 py - 2.5 px - 3 rounded - lg cursor - pointer transition - colors duration - 200 hover: bg - muted / 60 ${formData.permissions.includes(p.permission) ? 'bg-primary/10' : ''} `}
                         >
                           <Checkbox
-                            id={`perm-${p.id}`}
+                            id={`perm - ${p.id} `}
                             checked={formData.permissions.includes(p.permission)}
                             onCheckedChange={() => togglePermission(p.permission, permissions.map(x => x.permission))}
                             className="shrink-0"

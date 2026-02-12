@@ -8,6 +8,7 @@ import {
   Question as HelpCircle,
   FileText
 } from '@phosphor-icons/react';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { StatusBadge } from '@/components/shared/StatusBadge';
@@ -83,7 +84,9 @@ export default function StudentDetail() {
   if (loading) {
     return (
       <div className="page-container">
-        <div className="flex justify-center py-12 text-muted-foreground animate-pulse">Loading...</div>
+        <div className="flex justify-center py-12">
+          <BallBouncingLoader />
+        </div>
       </div>
     );
   }

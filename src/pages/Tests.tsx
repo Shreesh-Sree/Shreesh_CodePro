@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { testsApi } from '@/lib/api';
 import type { ApiTest } from '@/lib/api';
 import { Warning as AlertTriangle, Clock, CalendarBlank as Calendar } from '@phosphor-icons/react';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 
 export default function Tests() {
   const navigate = useNavigate();
@@ -65,7 +66,11 @@ export default function Tests() {
 
   const canStart = (t: ApiTest) => isLive(t);
 
-  if (loading) return <div className="flex justify-center py-8 text-muted-foreground animate-pulse">Loading...</div>;
+  if (loading) return (
+    <div className="flex justify-center py-8">
+      <BallBouncingLoader />
+    </div>
+  );
 
   return (
     <div className="page-container">

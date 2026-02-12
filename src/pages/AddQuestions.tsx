@@ -23,8 +23,10 @@ import {
   Plus,
   FileText as FileQuestion,
   ArrowLeft,
-  Tag
+  Tag,
+  Sparkle
 } from '@phosphor-icons/react';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 
 export default function AddQuestions() {
   const { toast } = useToast();

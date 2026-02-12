@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, PencilSimple as Pencil, Trash as Trash2, Buildings as Building2 } from '@phosphor-icons/react';
+import { Plus, PencilSimple as Pencil, Trash as Trash2, Buildings as Building2, Image as ImageIcon, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 import { DataTable, Column, Action } from '@/components/shared/DataTable';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Can, usePermission } from '@/contexts/PermissionContext';
@@ -17,6 +18,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
+interface HeaderLogo {
+  id: string;
+  url: string;
+  name: string;
+}
+
 export default function Colleges() {
   const { hasPermission } = usePermission();
   const [colleges, setColleges] = useState<ApiCollege[]>([]);
@@ -24,6 +31,57 @@ export default function Colleges() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCollege, setEditingCollege] = useState<ApiCollege | null>(null);
   const [formData, setFormData] = useState({ name: '', code: '' });
+
+  // Header Logos State
+  const [isLogoDialogOpen, setIsLogoDialogOpen] = useState(false);
+  const [headerLogos, setHeaderLogos] = useState<HeaderLogo[]>([]);
+
+  useEffect(() => {
+    const savedLogos = localStorage.getItem('headerLogos');
+    if (savedLogos) {
+      try {
+        setHeaderLogos(JSON.parse(savedLogos));
+      } catch (e) {
+        console.error("Failed to parse header logos", e);
+      }
+    }
+  }, []);
+
+  const saveLogos = (logos: HeaderLogo[]) => {
+    setHeaderLogos(logos);
+    localStorage.setItem('headerLogos', JSON.stringify(logos));
+    // Dispatch event to notify MainLayout
+    window.dispatchEvent(new Event('headerLogosUpdated'));
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024 * 2) {
+      toast.error("Image size must be less than 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      const newLogo: HeaderLogo = {
+        id: crypto.randomUUID(),
+        url: base64String,
+        name: file.name
+      };
+      saveLogos([...headerLogos, newLogo]);
+      toast.success("Logo added successfully");
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ''; // Reset input
+  };
+
+  const handleDeleteLogo = (id: string) => {
+    saveLogos(headerLogos.filter(l => l.id !== id));
+    toast.success("Logo removed");
+  };
 
   const fetchColleges = useCallback(async () => {
     try {
@@ -116,16 +174,26 @@ export default function Colleges() {
             Manage all colleges in the education system
           </p>
         </div>
-        <Can permission="college:create">
-          <Button onClick={() => { setFormData({ name: '', code: '' }); setIsDialogOpen(true); }}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add College
-          </Button>
-        </Can>
+        <div className="flex gap-2">
+          <Can permission="college:create">
+            <Button variant="outline" onClick={() => setIsLogoDialogOpen(true)} className="gap-2">
+              <ImageIcon className="h-4 w-4" />
+              Manage Logos
+            </Button>
+          </Can>
+          <Can permission="college:create">
+            <Button onClick={() => { setFormData({ name: '', code: '' }); setIsDialogOpen(true); }}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add College
+            </Button>
+          </Can>
+        </div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-8 text-muted-foreground animate-pulse">Loading...</div>
+        <div className="flex justify-center py-8">
+          <BallBouncingLoader />
+        </div>
       ) : (
         <div className="neo-card p-0 overflow-hidden">
           <DataTable
@@ -139,6 +207,7 @@ export default function Colleges() {
         </div>
       )}
 
+      {/* College Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="neo-card-flat border border-border shadow-none max-w-md">
           <DialogHeader>
@@ -176,6 +245,45 @@ export default function Colleges() {
             <Button onClick={handleSubmit} disabled={!formData.name.trim()}>
               {editingCollege ? 'Save Changes' : 'Create College'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Logo Manager Dialog */}
+      <Dialog open={isLogoDialogOpen} onOpenChange={setIsLogoDialogOpen}>
+        <DialogContent className="neo-card-flat border border-border shadow-none max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-medium" style={{ fontFamily: 'var(--font-serif)' }}>
+              Header Logos
+            </DialogTitle>
+            <DialogDescription>
+              Upload logos to be displayed in the application header.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="grid grid-cols-3 gap-4">
+              {headerLogos.map(logo => (
+                <div key={logo.id} className="group relative aspect-square rounded-lg border bg-secondary/30 flex items-center justify-center p-4">
+                  <img src={logo.url} alt="Logo" className="w-full h-full object-contain" />
+                  <button
+                    onClick={() => handleDeleteLogo(logo.id)}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              <label className="aspect-square rounded-lg border border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5 flex flex-col items-center justify-center cursor-pointer transition-colors gap-2 text-muted-foreground hover:text-primary">
+                <Plus className="h-6 w-6" />
+                <span className="text-xs font-medium">Add Logo</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+              </label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setIsLogoDialogOpen(false)}>Done</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -7,7 +7,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { PermissionProvider } from "@/contexts/PermissionContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MainLayout } from "@/components/layout/MainLayout";
-import GrainEffect from "@/components/ui/GrainEffect";
 
 // Pages
 import Login from "@/pages/Login";
@@ -42,7 +41,6 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <GrainEffect />
       <Sonner position="top-right" />
       <BrowserRouter>
         <AuthProvider>

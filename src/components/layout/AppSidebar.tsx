@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Buildings, SquaresFour, Users, BookOpen, ChartBar,
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermission } from '@/contexts/PermissionContext';
 import { Permission } from '@/types/auth';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
 interface NavItem {
   title: string;
@@ -54,8 +55,9 @@ export function AppSidebar({ collapsed, setCollapsed }: AppSidebarProps) {
 
   useEffect(() => {
     const checkSize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 1200 && window.innerWidth >= 768) {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      if (width < 1200 && width >= 768) {
         setCollapsed(true);
       }
     };
@@ -64,101 +66,153 @@ export function AppSidebar({ collapsed, setCollapsed }: AppSidebarProps) {
     return () => window.removeEventListener('resize', checkSize);
   }, []);
 
-  if (isMobile) return null;
-
-  const filteredNavItems = navItems.filter(item => {
+  const filteredNavItems = useMemo(() => navItems.filter(item => {
     if (item.superAdminOnly) return user?.role === 'SUPERADMIN';
     if (item.studentOnly) return user?.role === 'STUDENT';
     if (item.permissions) return hasAnyPermission(item.permissions);
     if (item.permission) return hasPermission(item.permission);
     return true;
-  });
+  }), [user?.role, hasAnyPermission, hasPermission]);
 
   const label = (item: NavItem) =>
     item.path === '/users' && user?.role === 'DEPARTMENT' ? 'Mentors' : item.title;
 
+  if (isMobile) return null;
+
   return (
-    <aside
+    <motion.aside
+      initial={false}
+      animate={{
+        width: collapsed ? 80 : 300,
+        transition: {
+          type: "spring",
+          damping: 30,
+          stiffness: 300,
+          mass: 0.8
+        }
+      }}
       className={cn(
-        "fixed top-[76px] bottom-4 left-4 z-40 flex flex-col transition-all duration-150 rounded-lg overflow-visible bg-card border border-border",
-        collapsed ? "w-[64px]" : "w-[280px]"
+        "fixed top-20 bottom-4 left-4 z-40 flex flex-col rounded-xl overflow-hidden border border-border",
+        "bg-card text-card-foreground shadow-sm"
       )}
-      style={{ padding: collapsed ? '16px 8px' : '20px 14px' }}
     >
+      {/* Navigation Top Padding since logo is outside */}
+      <div className="h-2" />
 
-
-      {/* User */}
-      <div className="flex items-center gap-3 mb-1 px-1">
-        <div className="w-8 h-8 rounded-md shrink-0 flex items-center justify-center bg-primary/15 text-primary">
-          <span className="text-sm font-semibold">
-            {user?.name?.charAt(0) || 'C'}
-          </span>
-        </div>
-        {!collapsed && (
-          <div className="min-w-0">
-            <p className="text-[13px] font-medium text-foreground truncate">{user?.name || 'User'}</p>
-            <p className="text-[11px] text-muted-foreground truncate capitalize">{user?.role?.toLowerCase() || 'admin'}</p>
+      {/* User Profile */}
+      <div className="relative z-10 p-4 pb-2">
+        <div className={cn(
+          "flex items-center gap-3 p-2 rounded-lg transition-all duration-300",
+          "hover:bg-muted/50 group cursor-default"
+        )}>
+          <div className="relative shrink-0">
+            <div className="w-10 h-10 rounded-md flex items-center justify-center bg-primary/10 text-primary font-bold">
+              {user?.name?.charAt(0) || 'C'}
+            </div>
           </div>
-        )}
+
+          <AnimatePresence mode="wait">
+            {!collapsed && (
+              <motion.div
+                initial={{ opacity: 0, x: -10, filter: 'blur(5px)' }}
+                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, x: -10, filter: 'blur(5px)' }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="min-w-0 flex-1"
+              >
+                <p className="text-base font-semibold text-foreground truncate">{user?.name || 'User'}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs text-muted-foreground truncate uppercase tracking-wider">{user?.role || 'Admin'}</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
-
-      {/* Collapse Toggle */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="absolute top-5 -right-3 w-6 h-6 rounded-md flex items-center justify-center transition-colors duration-150 cursor-pointer z-50 bg-card border border-border hover:border-primary/30"
-      >
-        {collapsed ? (
-          <CaretRight className="h-3 w-3 text-muted-foreground" />
-        ) : (
-          <CaretLeft className="h-3 w-3 text-muted-foreground" />
-        )}
-      </button>
-
-      {/* Divider */}
-      <div className="h-px w-full bg-border my-3" />
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto">
-        <ul className="space-y-0.5">
-          {filteredNavItems.map(item => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
-            return (
-              <li key={item.path}>
-                <NavLink
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 h-9 rounded-md px-2.5 transition-colors duration-150 cursor-pointer",
-                    "text-muted-foreground hover:text-foreground hover:bg-secondary",
-                    isActive && "bg-primary/10 text-primary",
-                    collapsed && "justify-center px-0"
-                  )}
-                >
-                  <Icon className="h-[17px] w-[17px] shrink-0" />
-                  {!collapsed && (
-                    <span className="text-[13px] font-medium truncate">{label(item)}</span>
-                  )}
-                </NavLink>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-3 custom-scrollbar relative z-10">
+        <LayoutGroup>
+          <ul className="space-y-1">
+            {filteredNavItems.map(item => {
+              const isActive = location.pathname === item.path;
+              const Icon = item.icon;
 
-      {/* Bottom: Logout */}
-      <div className="mt-auto pt-3">
-        <div className="h-px w-full bg-border mb-3" />
-        <button
-          onClick={logout}
-          className={cn(
-            "flex items-center gap-3 w-full h-9 rounded-md px-2.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/8 transition-colors duration-150 cursor-pointer",
-            collapsed && "justify-center px-0"
-          )}
-        >
-          <SignOut className="h-[17px] w-[17px] shrink-0" />
-          {!collapsed && <span className="text-[13px] font-medium">Logout</span>}
-        </button>
+              return (
+                <li key={item.path}>
+                  <NavLink to={item.path} className="relative block group">
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeNav"
+                        className="absolute inset-0 rounded-md bg-accent/15 border border-accent/20"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    <div className={cn(
+                      "relative flex items-center h-11 px-0 rounded-md transition-all duration-200 overflow-hidden",
+                      isActive ? "text-accent" : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                      collapsed ? "justify-center" : "gap-0"
+                    )}>
+                      {/* Fixed Square Icon Container */}
+                      <div className="w-11 h-11 shrink-0 flex items-center justify-center">
+                        <Icon className={cn(
+                          "h-6 w-6 transition-transform duration-300",
+                          isActive && "scale-110",
+                          !isActive && "group-hover:scale-110"
+                        )} weight={isActive ? "fill" : "regular"} />
+                      </div>
+
+                      <AnimatePresence mode="wait">
+                        {!collapsed && (
+                          <motion.span
+                            initial={{ opacity: 0, x: -5 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -5 }}
+                            transition={{ duration: 0.2 }}
+                            className="text-[15px] font-medium truncate pr-4"
+                          >
+                            {label(item)}
+                          </motion.span>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </NavLink>
+                </li>
+              );
+            })}
+          </ul>
+        </LayoutGroup>
       </div>
-    </aside>
+
+      {/* Footer / Toggle */}
+      <div className="relative z-10 p-3 mt-auto border-t border-border/40">
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="flex items-center justify-center w-full h-9 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {collapsed ? <CaretRight size={18} /> : (
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-widest">
+                <CaretLeft size={16} /> Hide Sidebar
+              </div>
+            )}
+          </button>
+
+          {!collapsed && <div className="h-px bg-border mx-2 my-1" />}
+
+          <button
+            onClick={logout}
+            className={cn(
+              "flex items-center justify-center gap-2 w-full h-9 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors",
+              collapsed && "h-10 w-full"
+            )}
+            title="Logout"
+          >
+            <SignOut size={18} />
+            {!collapsed && <span className="text-sm font-medium">Logout</span>}
+          </button>
+        </div>
+      </div>
+    </motion.aside>
   );
 }

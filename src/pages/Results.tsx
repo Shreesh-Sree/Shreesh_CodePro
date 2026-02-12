@@ -12,6 +12,8 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { testsApi } from '@/lib/api';
 import type { ApiTest } from '@/lib/api';
+import AdvancedPagination from '@/components/shared/AdvancedPagination';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 
 export default function Results() {
   const { testId } = useParams<{ testId: string }>();
@@ -23,6 +25,12 @@ export default function Results() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
+
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(results.length / itemsPerPage);
+  const paginatedResults = results.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   useEffect(() => {
     testsApi
@@ -56,7 +64,11 @@ export default function Results() {
     }
   };
 
-  if (loading) return <div className="flex justify-center py-8 text-muted-foreground animate-pulse">Loading...</div>;
+  if (loading) return (
+    <div className="flex justify-center py-8">
+      <BallBouncingLoader />
+    </div>
+  );
 
   if (testId && results.length >= 0) {
     const test = tests.find((t) => t.id === Number(testId));
@@ -93,7 +105,7 @@ export default function Results() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {results.map((r) => (
+                {paginatedResults.map((r) => (
                   <TableRow key={r.attemptId} className="hover:bg-muted/30 border-b border-border/50 last:border-0">
                     <TableCell className="px-6">{r.name}</TableCell>
                     <TableCell className="px-6">{r.email}</TableCell>
@@ -113,6 +125,16 @@ export default function Results() {
                 ))}
               </TableBody>
             </Table>
+            {totalPages > 1 && (
+              <div className="p-4 border-t bg-muted/10 flex justify-end">
+                <AdvancedPagination
+                  totalPages={totalPages}
+                  initialPage={page}
+                  onPageChange={setPage}
+                  variant="rounded"
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

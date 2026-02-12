@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, PencilSimple as Pencil, Trash as Trash2, SquaresFour as LayoutGrid, Buildings as Building2 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
+import AdvancedPagination from '@/components/shared/AdvancedPagination';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 import { Can, usePermission } from '@/contexts/PermissionContext';
 import { departmentsApi, collegesApi, ApiDepartment, ApiCollege } from '@/lib/api';
 import { setCachedDepartments, invalidateDepartmentsCache } from '@/lib/storage';
+import { cn, getDepartmentColor } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -103,6 +106,15 @@ export default function Departments() {
     [departments, colleges]
   );
 
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(grouped.length / itemsPerPage);
+
+  const paginatedGroups = useMemo(() => {
+    const start = (page - 1) * itemsPerPage;
+    return grouped.slice(start, start + itemsPerPage);
+  }, [grouped, page]);
+
   const handleEdit = (dept: ApiDepartment) => {
     setEditingDepartment(dept);
     setFormData({
@@ -199,7 +211,9 @@ export default function Departments() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-8 text-muted-foreground animate-pulse">Loading...</div>
+        <div className="flex justify-center py-8">
+          <BallBouncingLoader />
+        </div>
       ) : grouped.length === 0 ? (
         <div className="neo-card flex flex-col items-center justify-center py-12 text-muted-foreground">
           <LayoutGrid className="mb-4 h-12 w-12 opacity-50" />
@@ -207,7 +221,7 @@ export default function Departments() {
         </div>
       ) : (
         <div className="space-y-6">
-          {grouped.map(({ collegeName, collegeCode, departments: depts }) => (
+          {paginatedGroups.map(({ collegeName, collegeCode, departments: depts }) => (
             <div key={collegeCode || '__none__'} className="neo-card p-0 overflow-hidden">
               <div className="border-b bg-muted/40 py-4 px-6 flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-primary" />
@@ -222,9 +236,11 @@ export default function Departments() {
                     >
                       <div className="flex flex-wrap items-baseline gap-2">
                         <span className="font-medium text-sm">{dept.name}</span>
-                        <span className="text-muted-foreground text-xs">
-                          {dept.code || '—'}
-                        </span>
+                        {dept.code && (
+                          <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider", getDepartmentColor(dept.code))}>
+                            {dept.code}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         {canUpdate && (
@@ -259,6 +275,17 @@ export default function Departments() {
               </div>
             </div>
           ))}
+
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-6">
+              <AdvancedPagination
+                totalPages={totalPages}
+                initialPage={page}
+                onPageChange={setPage}
+                variant="rounded"
+              />
+            </div>
+          )}
         </div>
       )}
 

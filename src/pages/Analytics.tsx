@@ -19,6 +19,7 @@ import {
   GraduationCap
 } from '@phosphor-icons/react';
 import { StatCard } from '@/components/shared/StatCard';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 import { useAuth } from '@/contexts/AuthContext';
 import { analyticsApi, statsApi, ApiStats } from '@/lib/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
@@ -55,7 +56,9 @@ export default function Analytics() {
   if (loading) {
     return (
       <div className="page-container">
-        <div className="flex justify-center py-12 text-muted-foreground animate-pulse">Loading...</div>
+        <div className="flex justify-center py-12">
+          <BallBouncingLoader />
+        </div>
       </div>
     );
   }
@@ -90,8 +93,9 @@ export default function Analytics() {
         </div>
       </div>
 
+      {/* Primary Vitals Grid (Magic Bento) */}
       {/* Primary Vitals Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Students"
           value={totalStudents.toLocaleString()}

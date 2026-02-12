@@ -35,6 +35,7 @@ import {
   PlusCircle,
   ArrowSquareOut as ExternalLink
 } from '@phosphor-icons/react';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 
 type TestStatus = 'upcoming' | 'live' | 'past';
 
@@ -143,7 +144,11 @@ export default function TestsManagement() {
     past: tests.filter((t) => getStatus(t) === 'past'),
   };
 
-  if (loading) return <div className="flex justify-center py-8 text-muted-foreground animate-pulse">Loading...</div>;
+  if (loading) return (
+    <div className="flex justify-center py-8">
+      <BallBouncingLoader />
+    </div>
+  );
 
   return (
     <div className="page-container">

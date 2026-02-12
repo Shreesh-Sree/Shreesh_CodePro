@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, PencilSimple as Pencil, Trash as Trash2, Briefcase } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 import { DataTable, Column, Action } from '@/components/shared/DataTable';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Can, usePermission } from '@/contexts/PermissionContext';
@@ -124,7 +125,9 @@ export default function Placements() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-8 text-muted-foreground animate-pulse">Loading...</div>
+        <div className="flex justify-center py-8">
+          <BallBouncingLoader />
+        </div>
       ) : (
         <div className="neo-card p-0 overflow-hidden">
           <DataTable

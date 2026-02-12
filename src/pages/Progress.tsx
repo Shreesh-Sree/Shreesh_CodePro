@@ -14,6 +14,7 @@ import {
   User,
 } from '@phosphor-icons/react';
 import { Progress } from '@/components/ui/progress';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 import { studentsApi } from '@/lib/api';
 import type { ApiStudentProgress } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,7 +66,9 @@ export default function StudentProgress() {
   if (loading) {
     return (
       <div className="page-container">
-        <div className="flex justify-center py-12 text-muted-foreground animate-pulse">Loading...</div>
+        <div className="flex justify-center py-12">
+          <BallBouncingLoader />
+        </div>
       </div>
     );
   }

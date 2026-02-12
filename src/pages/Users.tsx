@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, PencilSimple as Pencil, Trash as Trash2, Users as UsersIcon, Shield, UploadSimple as Upload, CircleNotch as Loader2, FileCsv as FileSpreadsheet, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 import { DataTable, Column, Action } from '@/components/shared/DataTable';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Can, usePermission } from '@/contexts/PermissionContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usersApi, departmentsApi, rolesApi, permissionsApi, placementsApi, uploadBulkUsers, ApiUser, ApiDepartment, ApiRoleOption, ApiPermission, ApiPlacement } from '@/lib/api';
 import { getCachedDepartments, setCachedDepartments, getCachedRolesAssignable, setCachedRolesAssignable } from '@/lib/storage';
+import { cn, getRoleColor } from '@/lib/utils';
 import { Role } from '@/types/auth';
 import {
   Dialog,
@@ -228,7 +230,7 @@ export default function Users() {
       key: 'role',
       header: 'Role',
       render: (user) => (
-        <span className="px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
+        <span className={cn("px-2.5 py-1 rounded-md text-xs font-medium border", getRoleColor(user.role))}>
           {user.role}
         </span>
       ),
@@ -427,7 +429,9 @@ export default function Users() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-8 text-muted-foreground animate-pulse">Loading...</div>
+        <div className="flex justify-center py-8">
+          <BallBouncingLoader />
+        </div>
       ) : (
         <div className="neo-card p-0 overflow-hidden">
           <DataTable
@@ -790,7 +794,9 @@ export default function Users() {
           </DialogHeader>
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
             {permissionsLoading ? (
-              <div className="flex justify-center py-8 text-muted-foreground">Loading...</div>
+              <div className="flex justify-center py-8">
+                <BallBouncingLoader />
+              </div>
             ) : (
               <div className="space-y-5">
                 {groupPermissionsByCategory(permissionsList).map(({ category, label, permissions: perms }) => (

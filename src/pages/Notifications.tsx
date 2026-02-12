@@ -1,17 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, Info, CheckCircle, Warning, XCircle } from '@phosphor-icons/react';
-
-// Mock logs data
-const MOCK_LOGS = [
-    { id: 1, type: 'info', message: 'System update completed successfully.', time: '2 mins ago' },
-    { id: 2, type: 'success', message: 'New deployment triggers for staging.', time: '1 hour ago' },
-    { id: 3, type: 'warning', message: 'High memory usage detected on node-2.', time: '3 hours ago' },
-    { id: 4, type: 'error', message: 'Failed to sync with external API.', time: '5 hours ago' },
-    { id: 5, type: 'info', message: 'User admin@codepro.com logged in.', time: '1 day ago' },
-];
+import { formatDistanceToNow } from 'date-fns';
+import { notificationsApi, ApiNotification } from '@/lib/api';
+import BallBouncingLoader from '@/components/ui/BallBouncingLoader';
 
 export default function Notifications() {
-    const [logs] = useState(MOCK_LOGS);
+    const [logs, setLogs] = useState<ApiNotification[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const { notifications } = await notificationsApi.list();
+                setLogs(notifications);
+            } catch (error) {
+                console.error('Failed to fetch notifications', error);
+                // Keep empty logs or show error state if needed
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchNotifications();
+    }, []);
 
     const getIcon = (type: string) => {
         switch (type) {
@@ -40,20 +51,34 @@ export default function Notifications() {
                 <div className="border-b bg-muted/30 px-6 py-4">
                     <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Recent Activity Logs</h3>
                 </div>
-                <div className="divide-y divide-border">
-                    {logs.map((log) => (
-                        <div key={log.id} className="flex items-start gap-4 p-4 hover:bg-muted/30 transition-colors">
-                            <div className="mt-0.5 shrink-0">
-                                {getIcon(log.type)}
+
+                {loading ? (
+                    <div className="flex justify-center py-12">
+                        <BallBouncingLoader />
+                    </div>
+                ) : logs.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground text-sm">
+                        No notifications found.
+                    </div>
+                ) : (
+                    <div className="divide-y divide-border">
+                        {logs.map((log) => (
+                            <div key={log.id} className="flex items-start gap-4 p-4 hover:bg-muted/30 transition-colors">
+                                <div className="mt-0.5 shrink-0">
+                                    {getIcon(log.type)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-foreground">{log.message}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">{log.type}</p>
+                                </div>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                    {log.createdAt ? formatDistanceToNow(new Date(log.createdAt), { addSuffix: true }) : 'Just now'}
+                                </span>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-foreground">{log.message}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">{log.type}</p>
-                            </div>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">{log.time}</span>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
+
                 <div className="p-4 bg-muted/10 text-center">
                     <button className="text-xs font-medium text-primary hover:underline">View All Logs</button>
                 </div>
